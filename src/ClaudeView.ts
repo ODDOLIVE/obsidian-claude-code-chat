@@ -437,12 +437,12 @@ export class ClaudeView extends ItemView {
     if (loading) {
       this.sendBtnEl.empty();
       setIcon(this.sendBtnEl, "square");
-      this.sendBtnEl.addClass("is-loading");
+      this.sendBtnEl.addClass("claude-running");
       this.sendBtnEl.setAttribute("title", t("input.stop"));
     } else {
       this.sendBtnEl.empty();
       setIcon(this.sendBtnEl, "arrow-up");
-      this.sendBtnEl.removeClass("is-loading");
+      this.sendBtnEl.removeClass("claude-running");
       this.sendBtnEl.setAttribute("title", t("input.send"));
     }
   }

@@ -314,8 +314,9 @@
   justify-content: center;
 }
 
-/* Loading/stop state: red background, used to signal "press to stop". */
-.claude-send-btn.is-loading {
+/* Stop state: red background, used to signal "press to stop".
+   Class name avoids Obsidian's `.is-loading` which triggers a native progress bar overlay. */
+.claude-send-btn.claude-running {
   background: var(--background-modifier-error);
 }
 
