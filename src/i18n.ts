@@ -68,6 +68,8 @@ const STRINGS = {
     "modal.confirmDelete": "Click again to confirm delete",
 
     // Settings
+    "settings.support":
+      "If this plugin helps you, you can support its development on Ko-fi. Thanks!",
     "settings.claudePath": "Claude CLI path",
     "settings.claudePathDesc":
       "Absolute path or 'claude' if on PATH. e.g. /opt/homebrew/bin/claude",
@@ -254,6 +256,8 @@ const STRINGS = {
     "modal.confirmDelete": "한 번 더 누르면 삭제됩니다",
 
     // Settings
+    "settings.support":
+      "이 plugin이 도움이 됐다면, Ko-fi에서 개발을 응원해 주세요. 감사합니다!",
     "settings.claudePath": "Claude CLI 경로",
     "settings.claudePathDesc":
       "절대 경로 또는 PATH에 있는 경우 'claude'만 입력. 예: /opt/homebrew/bin/claude",

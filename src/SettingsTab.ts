@@ -56,6 +56,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
+    this.renderSupportBox(containerEl);
     this.renderConnectionSection(containerEl);
 
     new Setting(containerEl)
@@ -181,6 +182,26 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
           .setWarning()
           .onClick(() => this.onClearSessions())
       );
+  }
+
+  private renderSupportBox(containerEl: HTMLElement): void {
+    const box = containerEl.createDiv({ cls: "claude-settings-support" });
+    box.createDiv({
+      cls: "claude-settings-support-text",
+      text: t("settings.support"),
+    });
+    const link = box.createEl("a", {
+      cls: "claude-settings-support-link",
+      href: "https://ko-fi.com/oddolive",
+      attr: { target: "_blank", rel: "noopener noreferrer" },
+    });
+    link.createEl("img", {
+      cls: "claude-settings-support-img",
+      attr: {
+        src: "https://storage.ko-fi.com/cdn/kofi3.png?v=3",
+        alt: "Buy me a coffee on Ko-fi",
+      },
+    });
   }
 
   private renderConnectionSection(containerEl: HTMLElement): void {

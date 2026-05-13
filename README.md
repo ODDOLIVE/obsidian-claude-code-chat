@@ -6,6 +6,10 @@ OAuth or API key, session resume, file attachments, Markdown export, and a chat 
 
 ![Main demo](assets/maindemo.gif)
 
+> If this plugin helps you, you can support its development on Ko-fi. Thanks!
+>
+> [![Buy me a coffee on Ko-fi](https://storage.ko-fi.com/cdn/kofi3.png?v=3)](https://ko-fi.com/oddolive)
+
 ---
 
 ## Features
@@ -164,11 +168,3 @@ Issues and PRs are welcome. See `.github/ISSUE_TEMPLATE/` once filed.
 ## License
 
 [MIT](LICENSE).
-
----
-
-## Support
-
-If this plugin helps you, you can support its development on Ko-fi. Thanks!
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/oddolive)

@@ -516,6 +516,37 @@
   background: var(--background-secondary);
 }
 
+/* ----- Settings support box (top of settings tab) ----- */
+.claude-settings-support {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.claude-settings-support-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.claude-settings-support-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.claude-settings-support-img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
 .claude-conn-heading {
   margin: 0 0 8px 0;
 }
