@@ -873,8 +873,11 @@ export class ClaudeView extends ItemView {
           : cmd.label;
         item.setText(text);
         item.onmouseenter = () => {
+          if (activeIdx === i) return;
+          const prev = listEl.querySelector(".claude-slash-item.is-active");
+          if (prev) prev.removeClass("is-active");
           activeIdx = i;
-          render();
+          item.addClass("is-active");
         };
         item.onclick = () => {
           this.handleSlashCommand(cmd);

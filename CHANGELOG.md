@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-13
+### Fixed
+- Slash command popup: mouse click on an item is now reliably picked up. Previously the `mouseenter` handler re-rendered the entire list, destroying the click target before `click` fired. Hover now only toggles the active highlight.
+- Send/stop button: renamed the runtime class from `.is-loading` to `.claude-running` to stop Obsidian's native progress overlay from sweeping across the button while a response is streaming.
+
 ## [0.1.0] - 2026-05-13
 ### Added
 - Side-panel chat view backed by the Claude Code CLI (`claude -p ... --output-format stream-json`).
