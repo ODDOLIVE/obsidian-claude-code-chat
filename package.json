@@ -1,0 +1,45 @@
+{
+	"name": "obsidian-claude-code-chat",
+	"version": "0.1.0",
+	"description": "Obsidian plugin: chat with the Claude Code CLI from a side panel.",
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "eslint ."
+	},
+	"author": "ODDOLIVE",
+	"license": "MIT",
+	"homepage": "https://github.com/ODDOLIVE/obsidian-claude-code-chat",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ODDOLIVE/obsidian-claude-code-chat.git"
+	},
+	"bugs": {
+		"url": "https://github.com/ODDOLIVE/obsidian-claude-code-chat/issues"
+	},
+	"keywords": [
+		"obsidian",
+		"obsidian-plugin",
+		"claude",
+		"claude-code",
+		"chat",
+		"ai"
+	],
+	"devDependencies": {
+		"@types/node": "^16.11.6",
+		"esbuild": "0.25.5",
+		"eslint-plugin-obsidianmd": "0.1.9",
+		"globals": "14.0.0",
+		"tslib": "2.4.0",
+		"typescript": "^5.8.3",
+		"typescript-eslint": "8.35.1",
+		"@eslint/js": "9.30.1",
+		"jiti": "2.6.1"
+	},
+	"dependencies": {
+		"obsidian": "latest"
+	}
+}
