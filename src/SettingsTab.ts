@@ -63,6 +63,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
       .setDesc(t("settings.claudePathDesc"))
       .addText((text) =>
         text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- CLI binary name
           .setPlaceholder("claude")
           .setValue(this.plugin.settings.claudePath)
           .onChange(async (value) => {
@@ -124,6 +125,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
       .setDesc(t("settings.saveFolderDesc"))
       .addText((text) =>
         text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- default folder name with product noun
           .setPlaceholder("Claude Chats")
           .setValue(this.plugin.settings.saveFolder)
           .onChange(async (value) => {
@@ -166,8 +168,9 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
           .onClick(() => this.onGenerateClaudeMd())
       );
 
-    containerEl.createEl("h3", { text: t("settings.dangerZone") }).style.cssText =
-      "margin-top:24px;color:var(--text-error);";
+    new Setting(containerEl)
+      .setName(t("settings.dangerZone"))
+      .setHeading();
 
     new Setting(containerEl)
       .setName(t("settings.clearSessions"))
@@ -181,36 +184,32 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
   }
 
   private renderConnectionSection(containerEl: HTMLElement): void {
-    const wrap = containerEl.createDiv();
-    wrap.style.cssText =
-      "padding:12px;margin-bottom:16px;border:1px solid var(--background-modifier-border);border-radius:8px;background:var(--background-secondary);";
+    const wrap = containerEl.createDiv({ cls: "claude-conn-wrap" });
 
-    const heading = wrap.createEl("h3", { text: t("auth.section") });
-    heading.style.cssText = "margin:0 0 8px 0;";
+    new Setting(wrap)
+      .setName(t("auth.section"))
+      .setHeading();
 
-    const statusEl = wrap.createDiv();
-    statusEl.style.cssText = "font-size:13px;line-height:1.6;";
+    const statusEl = wrap.createDiv({ cls: "claude-conn-status" });
     statusEl.setText("…");
 
-    const noteEl = wrap.createDiv({ text: t("auth.priorityNote") });
-    noteEl.style.cssText =
-      "font-size:11px;opacity:0.7;margin-top:6px;";
+    wrap.createDiv({ cls: "claude-conn-note", text: t("auth.priorityNote") });
 
-    const btnRow = wrap.createDiv();
-    btnRow.style.cssText =
-      "display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;";
+    const btnRow = wrap.createDiv({ cls: "claude-conn-btn-row" });
 
     const refreshBtn = btnRow.createEl("button", { text: t("auth.refresh") });
-    const signInBtn = btnRow.createEl("button", { text: t("auth.signIn") });
-    signInBtn.style.background = "var(--interactive-accent)";
-    signInBtn.style.color = "var(--text-on-accent)";
+    const signInBtn = btnRow.createEl("button", {
+      cls: "claude-conn-signin-btn",
+      text: t("auth.signIn"),
+    });
     const clearKeyBtn = btnRow.createEl("button", {
       text: t("auth.clearApiKey"),
     });
 
-    const scopeNote = wrap.createDiv({ text: t("auth.signOutScopeNote") });
-    scopeNote.style.cssText =
-      "font-size:11px;opacity:0.7;margin-top:6px;line-height:1.4;";
+    wrap.createDiv({
+      cls: "claude-conn-scope-note",
+      text: t("auth.signOutScopeNote"),
+    });
 
     const renderStatus = (s: AuthStatus | null) => {
       statusEl.empty();
@@ -218,32 +217,36 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
         statusEl.setText("…");
         return;
       }
-      const cliLine = statusEl.createDiv();
+      const cliLine = statusEl.createDiv({
+        cls: s.cliInstalled
+          ? "claude-conn-status-line is-success"
+          : "claude-conn-status-line is-error",
+      });
       cliLine.setText(
         s.cliInstalled
           ? "✓ " + t("auth.cliInstalled", s.cliVersion)
           : "✗ " + t("auth.cliMissing")
       );
-      cliLine.style.color = s.cliInstalled
-        ? "var(--text-success, var(--text-normal))"
-        : "var(--text-error)";
       if (!s.cliInstalled) {
-        const hint = statusEl.createDiv({ text: t("auth.cliMissingDesc") });
-        hint.style.cssText = "font-size:12px;opacity:0.8;margin-top:2px;";
+        statusEl.createDiv({
+          cls: "claude-conn-hint",
+          text: t("auth.cliMissingDesc"),
+        });
       }
 
-      const authLine = statusEl.createDiv();
       let authText: string;
+      let authCls: string;
       if (s.effectiveMethod === "oauth") {
         authText = "✓ " + t("auth.signedInOauth");
-        authLine.style.color = "var(--text-success, var(--text-normal))";
+        authCls = "claude-conn-status-line is-success";
       } else if (s.effectiveMethod === "apiKey") {
         authText = "✓ " + t("auth.signedInApiKey");
-        authLine.style.color = "var(--text-success, var(--text-normal))";
+        authCls = "claude-conn-status-line is-success";
       } else {
         authText = "✗ " + t("auth.notSignedIn");
-        authLine.style.color = "var(--text-error)";
+        authCls = "claude-conn-status-line is-error";
       }
+      const authLine = statusEl.createDiv({ cls: authCls });
       authLine.setText(authText);
     };
 
@@ -267,7 +270,8 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
         renderStatus(adjusted);
         clearKeyBtn.disabled = !this.plugin.settings.apiKey;
         // Hide system-OAuth Sign-in button when plugin-scoped auth is enforced.
-        signInBtn.style.display = this.plugin.settings.apiKeyOnly ? "none" : "";
+        if (this.plugin.settings.apiKeyOnly) signInBtn.addClass("claude-hidden");
+        else signInBtn.removeClass("claude-hidden");
       } catch (e) {
         new Notice((e as Error).message);
       }
@@ -413,17 +417,7 @@ class SignInModal extends Modal {
     contentEl.empty();
     contentEl.createEl("h3", { text: t("auth.signIn") });
     contentEl.createEl("p", { text: t("auth.signInDesc") });
-    this.logEl = contentEl.createEl("pre");
-    this.logEl.style.cssText = `
-      background:var(--background-primary-alt);
-      padding:8px;
-      border-radius:6px;
-      max-height:280px;
-      overflow:auto;
-      font-size:12px;
-      white-space:pre-wrap;
-      word-break:break-word;
-    `;
+    this.logEl = contentEl.createEl("pre", { cls: "claude-signin-log" });
   }
 
   append(text: string): void {
@@ -459,16 +453,15 @@ class ConfirmModal extends Modal {
     contentEl.createEl("h3", { text: this.title });
     contentEl.createEl("p", { text: this.message });
 
-    const btnRow = contentEl.createDiv();
-    btnRow.style.cssText =
-      "display:flex;justify-content:flex-end;gap:8px;margin-top:16px;";
+    const btnRow = contentEl.createDiv({ cls: "claude-confirm-btn-row" });
 
     const cancelBtn = btnRow.createEl("button", { text: t("settings.cancel") });
     cancelBtn.onclick = () => this.close();
 
-    const confirmBtn = btnRow.createEl("button", { text: t("settings.confirm") });
-    confirmBtn.style.cssText =
-      "background:var(--background-modifier-error);color:var(--text-on-accent);";
+    const confirmBtn = btnRow.createEl("button", {
+      cls: "claude-confirm-btn-danger",
+      text: t("settings.confirm"),
+    });
     confirmBtn.onclick = async () => {
       await this.onConfirm();
       this.close();

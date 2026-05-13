@@ -1,0 +1,595 @@
+/* Claude Code Chat plugin styles. All class names use the `claude-` prefix. */
+
+/* ----- Selection style for user messages (moved from main.ts injectStyles) ----- */
+.claude-user-msg::selection,
+.claude-user-msg *::selection {
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--text-on-accent);
+}
+
+/* ============================================================ */
+/* ClaudeView                                                   */
+/* ============================================================ */
+
+/* Root container of the side-panel chat view */
+.claude-chat-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  gap: 8px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ----- Header ----- */
+.claude-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.claude-name-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.claude-name-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  box-sizing: border-box;
+}
+
+.claude-header-icon-btn {
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--text-muted);
+}
+
+/* ----- Search dropdown ----- */
+.claude-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 4px;
+}
+
+.claude-search-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  background: transparent;
+}
+
+.claude-search-item:hover,
+.claude-search-item.is-active {
+  background: var(--background-modifier-hover);
+}
+
+.claude-search-item-title {
+  font-weight: 500;
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claude-search-item-meta {
+  opacity: 0.6;
+}
+
+/* ----- Messages area ----- */
+.claude-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+.claude-msg {
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 90%;
+  word-break: break-word;
+}
+
+.claude-msg-user {
+  align-self: flex-end;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.claude-msg-assistant {
+  align-self: flex-start;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+.claude-msg-label {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+/* User message bodies are always plain text -> preserve whitespace. */
+.claude-msg-user .claude-msg-body {
+  white-space: pre-wrap;
+}
+
+/* Streaming assistant body: plain text while streaming, markdown after finalize. */
+.claude-stream-body.is-streaming {
+  white-space: pre-wrap;
+}
+
+.claude-attached-badges {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.claude-attached-badge {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.claude-error-msg {
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: var(--background-modifier-error);
+  border: 1px solid var(--text-error, #cc4444);
+  border-radius: 8px;
+  color: var(--text-on-accent, #ffffff);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  align-self: stretch;
+}
+
+/* Force-selectable utility (replaces inline setProperty calls) */
+.claude-selectable {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+/* ----- Empty state ----- */
+.claude-empty-state {
+  margin: auto;
+  max-width: 480px;
+  text-align: center;
+  opacity: 0.75;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 20px 24px;
+  background: var(--background-secondary);
+  border-radius: 10px;
+  white-space: pre-wrap;
+}
+
+/* ----- Input area ----- */
+.claude-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.claude-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.claude-input-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.claude-input-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-primary);
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.claude-input-textarea {
+  width: 100%;
+  resize: none;
+  min-height: 48px;
+  max-height: 240px;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-normal);
+}
+
+.claude-input-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claude-icon-btn {
+  padding: 6px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+}
+
+.claude-icon-btn-small {
+  padding: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+}
+
+.claude-input-spacer {
+  flex: 1;
+}
+
+.claude-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-radius: 4px;
+}
+
+.claude-model-btn-label {
+  font-weight: 500;
+}
+
+.claude-model-btn-chevron {
+  display: flex;
+  align-items: center;
+}
+
+.claude-send-btn {
+  padding: 6px 8px;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading/stop state: red background, used to signal "press to stop". */
+.claude-send-btn.is-loading {
+  background: var(--background-modifier-error);
+}
+
+/* ----- Attached files display ----- */
+.claude-attached-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--background-modifier-success);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.claude-attached-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claude-attached-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claude-attached-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+/* ----- Drop overlay ----- */
+.claude-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px dashed var(--interactive-accent);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 200;
+  color: var(--text-on-accent);
+  font-size: 14px;
+}
+
+.claude-drop-overlay.is-visible {
+  display: flex;
+}
+
+/* ----- Slash command popup ----- */
+.claude-slash-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  max-height: 280px;
+  flex-shrink: 0;
+}
+
+.claude-slash-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.claude-slash-search {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.claude-slash-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+}
+
+.claude-slash-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.claude-slash-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  background: transparent;
+}
+
+.claude-slash-item.is-active {
+  background: var(--background-modifier-hover);
+}
+
+.claude-slash-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* ============================================================ */
+/* SessionListModal                                             */
+/* ============================================================ */
+
+.claude-session-new-btn {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.claude-session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 6px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.claude-session-content {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.claude-session-title {
+  font-size: 13px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claude-session-meta {
+  opacity: 0.7;
+}
+
+.claude-session-del-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Confirming-delete modifier: red highlight after first click. */
+.claude-session-del-btn.is-confirming {
+  color: var(--text-on-accent);
+  background: var(--background-modifier-error);
+}
+
+/* ============================================================ */
+/* SettingsTab                                                  */
+/* ============================================================ */
+
+.claude-settings-danger-heading {
+  margin-top: 24px;
+  color: var(--text-error);
+}
+
+.claude-conn-wrap {
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.claude-conn-heading {
+  margin: 0 0 8px 0;
+}
+
+.claude-conn-status {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Status line color modifiers. */
+.claude-conn-status-line.is-success {
+  color: var(--text-success, var(--text-normal));
+}
+
+.claude-conn-status-line.is-error {
+  color: var(--text-error);
+}
+
+.claude-conn-note {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.claude-conn-hint {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.claude-conn-btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.claude-conn-signin-btn {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* Hidden modifier (replaces inline display:none for the sign-in button). */
+.claude-hidden {
+  display: none;
+}
+
+.claude-conn-scope-note {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ----- SignInModal ----- */
+.claude-signin-log {
+  background: var(--background-primary-alt);
+  padding: 8px;
+  border-radius: 6px;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ----- ConfirmModal ----- */
+.claude-confirm-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.claude-confirm-btn-danger {
+  background: var(--background-modifier-error);
+  color: var(--text-on-accent);
+}

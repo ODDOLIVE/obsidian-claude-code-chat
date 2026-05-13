@@ -139,7 +139,7 @@ export class AuthService {
     return (stdout || stderr || "").trim();
   }
 
-  static envWithPath(): NodeJS.ProcessEnv {
+  static envWithPath(): Record<string, string | undefined> {
     const isWin = process.platform === "win32";
     const extra = isWin ? "" : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
     return {

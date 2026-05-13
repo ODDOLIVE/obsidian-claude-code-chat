@@ -146,8 +146,13 @@ export class SessionManager {
     if (!sessionId) return;
     this.chatHistories[sessionId] = messages.slice();
     this.pruneHistories();
-    const data = (await this.plugin.loadData()) ?? {};
+    const data = await this.loadRaw();
     await this.plugin.saveData({ ...data, chatHistories: this.chatHistories });
+  }
+
+  private async loadRaw(): Promise<Record<string, unknown>> {
+    const raw: unknown = await this.plugin.loadData();
+    return raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   }
 
   private pruneHistories(): void {
@@ -168,7 +173,7 @@ export class SessionManager {
         if (!keep.has(id)) delete this.chatHistories[id];
       }
     }
-    const data = (await this.plugin.loadData()) ?? {};
+    const data = await this.loadRaw();
     await this.plugin.saveData({
       ...data,
       sessions: this.sessions,
@@ -183,7 +188,7 @@ export class SessionManager {
           chatHistories?: Record<string, ChatMessage[]>;
         }
       | null;
-    this.sessions = Array.isArray(data?.sessions) ? data!.sessions! : [];
+    this.sessions = Array.isArray(data?.sessions) ? data.sessions : [];
     this.chatHistories =
       data?.chatHistories && typeof data.chatHistories === "object"
         ? data.chatHistories
@@ -201,7 +206,7 @@ export class SessionManager {
       this.pendingPreview = null;
       this.pendingCustomName = null;
     }
-    const data = (await this.plugin.loadData()) ?? {};
+    const data = await this.loadRaw();
     await this.plugin.saveData({
       ...data,
       sessions: this.sessions,
@@ -216,7 +221,7 @@ export class SessionManager {
     this.isNewSession = true;
     this.pendingPreview = null;
     this.pendingModel = null;
-    const data = (await this.plugin.loadData()) ?? {};
+    const data = await this.loadRaw();
     await this.plugin.saveData({
       ...data,
       sessions: [],

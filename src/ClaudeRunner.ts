@@ -114,7 +114,7 @@ export class ClaudeRunner {
 
     const useShell = isWin && /\.(cmd|bat)$/i.test(execPath);
 
-    const env: NodeJS.ProcessEnv = {
+    const env: Record<string, string | undefined> = {
       ...process.env,
       PATH: (process.env.PATH ?? "") + extraPath,
     };
@@ -164,7 +164,7 @@ export class ClaudeRunner {
 
     proc.on("error", (err) => {
       this.proc = null;
-      const e = err as NodeJS.ErrnoException;
+      const e = err as Error & { code?: string };
       if (e.code === "ENOENT") {
         callbacks.onError(t("notice.claudeNotFound", execPath));
       } else {
@@ -200,14 +200,15 @@ export class ClaudeRunner {
   }
 
   private handleLine(line: string, callbacks: RunCallbacks): void {
-    let json: {
+    type StreamJson = {
       type?: string;
       subtype?: string;
       session_id?: string;
       message?: { content?: Array<{ type?: string; text?: string }> };
     };
+    let json: StreamJson;
     try {
-      json = JSON.parse(line);
+      json = JSON.parse(line) as StreamJson;
     } catch {
       return;
     }

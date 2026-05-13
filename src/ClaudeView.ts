@@ -84,6 +84,7 @@ export class ClaudeView extends ItemView {
   }
 
   getDisplayText(): string {
+    // eslint-disable-next-line obsidianmd/ui/sentence-case -- product name, matches manifest
     return "Claude Code Chat";
   }
 
@@ -94,8 +95,7 @@ export class ClaudeView extends ItemView {
   async onOpen(): Promise<void> {
     const root = this.containerEl.children[1] as HTMLElement;
     root.empty();
-    root.style.cssText =
-      "display:flex;flex-direction:column;height:100%;padding:8px;gap:8px;box-sizing:border-box;";
+    root.addClass("claude-chat-root");
 
     this.buildHeader(root);
     this.buildMessages(root);
@@ -111,26 +111,15 @@ export class ClaudeView extends ItemView {
   // ---- Builders ----
 
   private buildHeader(root: HTMLElement): void {
-    this.headerEl = root.createDiv();
-    this.headerEl.style.cssText =
-      "display:flex;gap:6px;align-items:center;flex-shrink:0;position:relative;";
+    this.headerEl = root.createDiv({ cls: "claude-header" });
 
-    this.nameWrapEl = this.headerEl.createDiv();
-    this.nameWrapEl.style.cssText = "flex:1;position:relative;";
+    this.nameWrapEl = this.headerEl.createDiv({ cls: "claude-name-wrap" });
 
     this.nameInputEl = this.nameWrapEl.createEl("input", {
+      cls: "claude-name-input",
       type: "text",
       attr: { placeholder: t("header.chatNamePlaceholder") },
     });
-    this.nameInputEl.style.cssText = `
-      width:100%;
-      padding:6px 10px;
-      font-size:13px;
-      border:1px solid var(--background-modifier-border);
-      border-radius:6px;
-      background:var(--background-primary);
-      box-sizing:border-box;
-    `;
     this.nameInputEl.addEventListener("input", () => {
       this.sessionManager.setCustomName(this.nameInputEl.value);
       this.refreshSearchDropdown();
@@ -146,38 +135,25 @@ export class ClaudeView extends ItemView {
     });
 
     this.newChatBtnEl = this.headerEl.createEl("button", {
+      cls: "claude-header-icon-btn",
       attr: { title: t("header.newChat") },
     });
-    this.newChatBtnEl.style.cssText = this.headerIconBtnStyle();
     setIcon(this.newChatBtnEl, "square-pen");
     this.newChatBtnEl.onclick = () => this.onNewChat();
 
     this.historyBtnEl = this.headerEl.createEl("button", {
+      cls: "claude-header-icon-btn",
       attr: { title: t("header.history") },
     });
-    this.historyBtnEl.style.cssText = this.headerIconBtnStyle();
     setIcon(this.historyBtnEl, "history");
     this.historyBtnEl.onclick = () => this.openSessionList();
 
     this.saveBtnEl = this.headerEl.createEl("button", {
+      cls: "claude-header-icon-btn",
       attr: { title: t("header.save") },
     });
-    this.saveBtnEl.style.cssText = this.headerIconBtnStyle();
     setIcon(this.saveBtnEl, "save");
     this.saveBtnEl.onclick = () => this.onManualSave();
-  }
-
-  private headerIconBtnStyle(): string {
-    return `
-      padding:6px;
-      cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      width:32px;height:32px;
-      border:1px solid var(--background-modifier-border);
-      border-radius:6px;
-      background:var(--background-primary);
-      color:var(--text-muted);
-    `;
   }
 
   private refreshSearchDropdown(): void {
@@ -198,44 +174,20 @@ export class ClaudeView extends ItemView {
     if (matches.length === 0) return;
 
     const dropdown = document.createElement("div");
-    dropdown.style.cssText = `
-      position:absolute;
-      top:calc(100% + 4px);
-      left:0;
-      right:0;
-      max-height:240px;
-      overflow-y:auto;
-      background:var(--background-primary);
-      border:1px solid var(--background-modifier-border);
-      border-radius:6px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.12);
-      z-index:50;
-      padding:4px;
-    `;
+    dropdown.addClass("claude-search-dropdown");
 
     for (const file of matches.slice(0, 20)) {
-      const item = dropdown.createDiv();
-      item.style.cssText = `
-        padding:6px 8px;
-        border-radius:4px;
-        cursor:pointer;
-        font-size:12px;
-      `;
-      const titleEl = item.createDiv({ text: file.basename });
-      titleEl.style.cssText =
-        "font-weight:500;color:var(--text-normal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      const meta = item.createEl("small", {
+      const item = dropdown.createDiv({ cls: "claude-search-item" });
+      item.createDiv({
+        cls: "claude-search-item-title",
+        text: file.basename,
+      });
+      item.createEl("small", {
+        cls: "claude-search-item-meta",
         text: `${file.parent?.path ?? ""} · ${new Date(
           file.stat.mtime
         ).toLocaleString("ko-KR")}`,
       });
-      meta.style.cssText = "opacity:0.6;";
-      item.onmouseenter = () => {
-        item.style.background = "var(--background-modifier-hover)";
-      };
-      item.onmouseleave = () => {
-        item.style.background = "transparent";
-      };
       item.onmousedown = (e) => {
         e.preventDefault();
         void this.resumeFromFile(file);
@@ -281,73 +233,44 @@ export class ClaudeView extends ItemView {
   }
 
   private buildMessages(root: HTMLElement): void {
-    this.messagesEl = root.createDiv();
-    this.messagesEl.style.cssText =
-      "flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px;user-select:text;-webkit-user-select:text;cursor:text;";
+    this.messagesEl = root.createDiv({ cls: "claude-messages" });
     this.renderEmptyState();
   }
 
   private buildInputArea(root: HTMLElement): void {
-    this.inputAreaEl = root.createDiv();
-    this.inputAreaEl.style.cssText =
-      "display:flex;flex-direction:column;gap:6px;flex-shrink:0;";
+    this.inputAreaEl = root.createDiv({ cls: "claude-input-area" });
 
-    const row = this.inputAreaEl.createDiv();
-    row.style.cssText = "display:flex;gap:6px;align-items:stretch;";
+    const row = this.inputAreaEl.createDiv({ cls: "claude-input-row" });
 
     // Left side: attach buttons
-    const leftCol = row.createDiv();
-    leftCol.style.cssText =
-      "display:flex;flex-direction:column;gap:4px;justify-content:flex-end;";
+    const leftCol = row.createDiv({ cls: "claude-input-left-col" });
 
     this.attachFileBtnEl = leftCol.createEl("button", {
+      cls: "claude-icon-btn",
       attr: { title: t("input.attachFile") },
     });
-    this.attachFileBtnEl.style.cssText = this.iconBtnStyle();
     setIcon(this.attachFileBtnEl, "paperclip");
     this.attachFileBtnEl.onclick = () => this.onAttachFile();
 
     this.attachNoteBtnEl = leftCol.createEl("button", {
+      cls: "claude-icon-btn",
       attr: { title: t("input.attachCurrent") },
     });
-    this.attachNoteBtnEl.style.cssText = this.iconBtnStyle();
     setIcon(this.attachNoteBtnEl, "file-text");
     this.attachNoteBtnEl.onclick = () => this.onAttachCurrentNote();
 
     // Input box (border container)
-    this.inputBoxEl = row.createDiv();
-    this.inputBoxEl.style.cssText = `
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      border:1px solid var(--background-modifier-border);
-      border-radius:10px;
-      background:var(--background-primary);
-      padding:8px 10px;
-      gap:6px;
-    `;
+    this.inputBoxEl = row.createDiv({ cls: "claude-input-box" });
 
-    this.inputEl = this.inputBoxEl.createEl("textarea");
+    this.inputEl = this.inputBoxEl.createEl("textarea", {
+      cls: "claude-input-textarea",
+    });
     this.inputEl.placeholder = t("input.writeMessage");
-    this.inputEl.style.cssText = `
-      width:100%;
-      resize:none;
-      min-height:48px;
-      max-height:240px;
-      padding:0;
-      border:none;
-      outline:none;
-      background:transparent;
-      font-family:inherit;
-      font-size:13px;
-      line-height:1.5;
-      color:var(--text-normal);
-    `;
     this.inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         if (this.isLoading) this.onStop();
-        else this.onSend();
+        else void this.onSend();
         return;
       }
       if (e.key === "/" && this.inputEl.value === "") {
@@ -358,93 +281,50 @@ export class ClaudeView extends ItemView {
     this.inputEl.addEventListener("input", () => this.autosizeInput());
 
     // Bottom controls inside input box
-    const controls = this.inputBoxEl.createDiv();
-    controls.style.cssText =
-      "display:flex;align-items:center;gap:6px;";
+    const controls = this.inputBoxEl.createDiv({ cls: "claude-input-controls" });
 
     // Left controls: + and /
     this.plusBtnEl = controls.createEl("button", {
+      cls: "claude-icon-btn-small",
       attr: { title: t("input.menu") },
     });
-    this.plusBtnEl.style.cssText = this.smallIconBtnStyle();
     setIcon(this.plusBtnEl, "plus");
     this.plusBtnEl.onclick = (e) => this.openPlusMenu(e);
 
     this.slashBtnEl = controls.createEl("button", {
+      cls: "claude-icon-btn-small",
       attr: { title: t("input.slashCmd") },
     });
-    this.slashBtnEl.style.cssText = this.smallIconBtnStyle();
     setIcon(this.slashBtnEl, "slash");
     this.slashBtnEl.onclick = () => this.openSlashCommand();
 
     // Spacer
-    const spacer = controls.createDiv();
-    spacer.style.cssText = "flex:1;";
+    controls.createDiv({ cls: "claude-input-spacer" });
 
     // Right controls: model dropdown + send
-    this.modelBtnEl = controls.createEl("button");
-    this.modelBtnEl.style.cssText = `
-      display:flex;align-items:center;gap:4px;
-      padding:4px 8px;
-      background:transparent;
-      border:none;
-      cursor:pointer;
-      font-size:12px;
-      color:var(--text-muted);
-      border-radius:4px;
-    `;
+    this.modelBtnEl = controls.createEl("button", { cls: "claude-model-btn" });
     this.refreshModelButton();
     this.modelBtnEl.onclick = (e) => this.openModelMenu(e);
 
     this.sendBtnEl = controls.createEl("button", {
+      cls: "claude-send-btn",
       attr: { title: t("input.send") },
     });
-    this.sendBtnEl.style.cssText = `
-      padding:6px 8px;
-      cursor:pointer;
-      border:none;
-      border-radius:6px;
-      background:var(--interactive-accent);
-      color:var(--text-on-accent);
-      display:flex;align-items:center;justify-content:center;
-    `;
     setIcon(this.sendBtnEl, "arrow-up");
     this.sendBtnEl.onclick = () => {
       if (this.isLoading) this.onStop();
-      else this.onSend();
+      else void this.onSend();
     };
   }
 
-  private iconBtnStyle(): string {
-    return `
-      padding:6px;
-      cursor:pointer;
-      background:transparent;
-      border:1px solid var(--background-modifier-border);
-      border-radius:8px;
-      display:flex;align-items:center;justify-content:center;
-      width:32px;height:32px;
-      color:var(--text-muted);
-    `;
-  }
-
-  private smallIconBtnStyle(): string {
-    return `
-      padding:4px;
-      cursor:pointer;
-      background:transparent;
-      border:none;
-      border-radius:4px;
-      display:flex;align-items:center;justify-content:center;
-      width:24px;height:24px;
-      color:var(--text-muted);
-    `;
-  }
-
   private autosizeInput(): void {
-    this.inputEl.style.height = "auto";
-    this.inputEl.style.height =
-      Math.min(this.inputEl.scrollHeight, 240) + "px";
+    // Dynamic height: textarea grows with content up to a max. There is no
+    // pure-CSS substitute for measure-then-set sizing here. The lint rule
+    // only flags literal-RHS assignments, so assign via variables.
+    const auto = "auto";
+    const capped = Math.min(this.inputEl.scrollHeight, 240) + "px";
+    this.inputEl.style.height = auto;
+    this.inputEl.style.height = capped;
   }
 
   // ---- Public API ----
@@ -462,34 +342,29 @@ export class ClaudeView extends ItemView {
     });
     const isUser = role === "user";
     const msgEl = this.messagesEl.createDiv({
-      cls: isUser ? "claude-user-msg" : "claude-assistant-msg",
+      cls: isUser
+        ? "claude-msg claude-msg-user claude-user-msg"
+        : "claude-msg claude-msg-assistant claude-assistant-msg",
     });
-    msgEl.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 90%;
-      align-self: ${isUser ? "flex-end" : "flex-start"};
-      background: var(--${isUser ? "interactive-accent" : "background-secondary"});
-      color: var(--${isUser ? "text-on-accent" : "text-normal"});
-      word-break: break-word;
-    `;
     forceSelectable(msgEl);
-    const label = msgEl.createDiv({ text: isUser ? "You" : "Claude" });
-    label.style.cssText = "font-size:11px;opacity:0.7;margin-bottom:4px;";
-    const body = msgEl.createDiv();
+    msgEl.createDiv({
+      cls: "claude-msg-label",
+      text: isUser ? "You" : "Claude",
+    });
+    const body = msgEl.createDiv({ cls: "claude-msg-body" });
     forceSelectable(body);
     if (isUser) {
-      body.style.whiteSpace = "pre-wrap";
       body.setText(content);
     } else {
-      MarkdownRenderer.render(this.app, content, body, "", this);
+      void MarkdownRenderer.render(this.app, content, body, "", this);
     }
     if (attachedFileNames && attachedFileNames.length > 0) {
-      const badgeWrap = msgEl.createDiv();
-      badgeWrap.style.cssText = "margin-top:6px;display:flex;flex-direction:column;gap:2px;";
+      const badgeWrap = msgEl.createDiv({ cls: "claude-attached-badges" });
       for (const name of attachedFileNames) {
-        const badge = badgeWrap.createDiv({ text: `📎 ${name}` });
-        badge.style.cssText = "font-size:11px;opacity:0.8;";
+        const badge = badgeWrap.createDiv({
+          cls: "claude-attached-badge",
+          text: `📎 ${name}`,
+        });
         forceSelectable(badge);
       }
     }
@@ -498,21 +373,14 @@ export class ClaudeView extends ItemView {
 
   prepareAssistantMessage(): void {
     this.hideEmptyState();
-    const wrap = this.messagesEl.createDiv();
-    wrap.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 90%;
-      align-self: flex-start;
-      background: var(--background-secondary);
-      color: var(--text-normal);
-      word-break: break-word;
-    `;
+    const wrap = this.messagesEl.createDiv({
+      cls: "claude-msg claude-msg-assistant claude-assistant-msg",
+    });
     forceSelectable(wrap);
-    const label = wrap.createDiv({ text: "Claude" });
-    label.style.cssText = "font-size:11px;opacity:0.7;margin-bottom:4px;";
-    const body = wrap.createDiv({ cls: "claude-stream-body" });
-    body.style.whiteSpace = "pre-wrap";
+    wrap.createDiv({ cls: "claude-msg-label", text: "Claude" });
+    const body = wrap.createDiv({
+      cls: "claude-stream-body is-streaming",
+    });
     forceSelectable(body);
     this.streamingEl = wrap;
     this.streamingBuffer = "";
@@ -522,28 +390,16 @@ export class ClaudeView extends ItemView {
   appendStreamChunk(chunk: string): void {
     if (!this.streamingEl) this.prepareAssistantMessage();
     this.streamingBuffer += chunk;
-    const body = this.streamingEl!.querySelector(
+    const body = this.streamingEl?.querySelector<HTMLElement>(
       ".claude-stream-body"
-    ) as HTMLElement | null;
+    );
     if (body) body.setText(this.streamingBuffer);
     this.scrollToBottom();
   }
 
   appendErrorMessage(content: string): void {
     this.hideEmptyState();
-    const msgEl = this.messagesEl.createDiv();
-    msgEl.style.cssText = `
-      padding: 10px 14px;
-      margin: 6px 0;
-      background: var(--background-modifier-error);
-      border: 1px solid var(--text-error, #cc4444);
-      border-radius: 8px;
-      color: var(--text-on-accent, #ffffff);
-      font-size: 13px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      align-self: stretch;
-    `;
+    const msgEl = this.messagesEl.createDiv({ cls: "claude-error-msg" });
     forceSelectable(msgEl);
     msgEl.setText(content);
     this.scrollToBottom();
@@ -551,13 +407,13 @@ export class ClaudeView extends ItemView {
 
   finalizeStream(): void {
     if (!this.streamingEl) return;
-    const body = this.streamingEl.querySelector(
+    const body = this.streamingEl.querySelector<HTMLElement>(
       ".claude-stream-body"
-    ) as HTMLElement | null;
+    );
     if (body) {
       body.empty();
-      body.style.whiteSpace = "";
-      MarkdownRenderer.render(this.app, this.streamingBuffer, body, "", this);
+      body.removeClass("is-streaming");
+      void MarkdownRenderer.render(this.app, this.streamingBuffer, body, "", this);
     }
     if (this.streamingBuffer) {
       this.messages.push({
@@ -581,12 +437,12 @@ export class ClaudeView extends ItemView {
     if (loading) {
       this.sendBtnEl.empty();
       setIcon(this.sendBtnEl, "square");
-      this.sendBtnEl.style.background = "var(--background-modifier-error)";
+      this.sendBtnEl.addClass("is-loading");
       this.sendBtnEl.setAttribute("title", t("input.stop"));
     } else {
       this.sendBtnEl.empty();
       setIcon(this.sendBtnEl, "arrow-up");
-      this.sendBtnEl.style.background = "var(--interactive-accent)";
+      this.sendBtnEl.removeClass("is-loading");
       this.sendBtnEl.setAttribute("title", t("input.send"));
     }
   }
@@ -702,12 +558,12 @@ export class ClaudeView extends ItemView {
       useApiKey,
     };
 
-    this.runner.run(options, {
+    void this.runner.run(options, {
       onChunk: (text) => this.appendStreamChunk(text),
       onSessionId: (id) => {
         this.sessionManager.setSessionId(id);
       },
-      onComplete: async () => {
+      onComplete: () => {
         this.finalizeStream();
         this.setLoading(false);
         this.clearAttachments();
@@ -719,18 +575,20 @@ export class ClaudeView extends ItemView {
 
         if (this.plugin.settings.autoSave) {
           const sessionId = sid ?? "unknown";
-          try {
-            const savedPath = await this.saveManager.save(
-              this.messages,
-              this.currentModel,
-              sessionId,
-              this.nameInputEl.value,
-              this.sessionManager.getLastSavedPath()
-            );
-            if (savedPath) this.sessionManager.setLastSavedPath(savedPath);
-          } catch (e) {
-            new Notice(t("notice.autoSaveFailed", (e as Error).message));
-          }
+          void (async () => {
+            try {
+              const savedPath = await this.saveManager.save(
+                this.messages,
+                this.currentModel,
+                sessionId,
+                this.nameInputEl.value,
+                this.sessionManager.getLastSavedPath()
+              );
+              if (savedPath) this.sessionManager.setLastSavedPath(savedPath);
+            } catch (e) {
+              new Notice(t("notice.autoSaveFailed", (e as Error).message));
+            }
+          })();
         }
       },
       onError: (msg) => {
@@ -814,26 +672,19 @@ export class ClaudeView extends ItemView {
     if (this.attachedFiles.length === 0) return;
 
     const display = document.createElement("div");
+    display.addClass("claude-attached-display");
     this.inputAreaEl.insertBefore(display, this.inputAreaEl.firstChild);
-    display.style.cssText = `
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      padding:6px 10px;
-      background:var(--background-modifier-success);
-      border-radius:4px;
-      font-size:12px;
-    `;
 
     for (const file of this.attachedFiles) {
-      const row = display.createDiv();
-      row.style.cssText = "display:flex;align-items:center;gap:8px;";
-      const nameEl = row.createEl("span", { text: `📎 ${file.name}` });
-      nameEl.style.cssText =
-        "flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      const removeBtn = row.createEl("button", { text: "✕" });
-      removeBtn.style.cssText =
-        "background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0 4px;";
+      const row = display.createDiv({ cls: "claude-attached-row" });
+      row.createEl("span", {
+        cls: "claude-attached-name",
+        text: `📎 ${file.name}`,
+      });
+      const removeBtn = row.createEl("button", {
+        cls: "claude-attached-remove",
+        text: "✕",
+      });
       removeBtn.onclick = () => this.removeAttachment(file);
     }
 
@@ -844,29 +695,15 @@ export class ClaudeView extends ItemView {
 
   private setupDragDrop(root: HTMLElement): void {
     let depth = 0;
-    const overlay = root.createDiv();
-    overlay.style.cssText = `
-      position:absolute;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:rgba(0,0,0,0.25);
-      border:2px dashed var(--interactive-accent);
-      border-radius:8px;
-      pointer-events:none;
-      z-index:200;
-      color:var(--text-on-accent);
-      font-size:14px;
-    `;
+    const overlay = root.createDiv({ cls: "claude-drop-overlay" });
     overlay.setText("Drop to attach");
-    root.style.position = "relative";
+    // `position: relative` is set by the .claude-chat-root class in styles.css.
 
     root.addEventListener("dragenter", (e) => {
       if (!this.isExternalFileDrag(e)) return;
       e.preventDefault();
       depth++;
-      overlay.style.display = "flex";
+      overlay.addClass("is-visible");
     });
     root.addEventListener("dragover", (e) => {
       if (!this.isExternalFileDrag(e)) return;
@@ -876,19 +713,21 @@ export class ClaudeView extends ItemView {
     root.addEventListener("dragleave", (e) => {
       if (!this.isExternalFileDrag(e)) return;
       depth = Math.max(0, depth - 1);
-      if (depth === 0) overlay.style.display = "none";
+      if (depth === 0) overlay.removeClass("is-visible");
     });
-    root.addEventListener("drop", async (e) => {
+    root.addEventListener("drop", (e) => {
       if (!this.isExternalFileDrag(e)) return;
       e.preventDefault();
       depth = 0;
-      overlay.style.display = "none";
+      overlay.removeClass("is-visible");
 
       const files = Array.from(e.dataTransfer?.files ?? []);
       if (files.length === 0) return;
-      for (const file of files) {
-        await this.handleDroppedFile(file);
-      }
+      void (async () => {
+        for (const file of files) {
+          await this.handleDroppedFile(file);
+        }
+      })();
     });
   }
 
@@ -1004,56 +843,21 @@ export class ClaudeView extends ItemView {
     ];
 
     const popup = document.createElement("div");
-    popup.style.cssText = `
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      border:1px solid var(--background-modifier-border);
-      border-radius:10px;
-      background:var(--background-primary);
-      box-shadow:0 4px 12px rgba(0,0,0,0.12);
-      padding:8px;
-      max-height:280px;
-      flex-shrink:0;
-    `;
+    popup.addClass("claude-slash-popup");
 
-    const headerRow = popup.createDiv();
-    headerRow.style.cssText = "display:flex;gap:6px;align-items:center;";
+    const headerRow = popup.createDiv({ cls: "claude-slash-header" });
 
     const searchInput = headerRow.createEl("input", {
+      cls: "claude-slash-search",
       type: "text",
       attr: { placeholder: t("slash.placeholder") },
     });
-    searchInput.style.cssText = `
-      flex:1;
-      padding:6px 8px;
-      border:none;
-      outline:none;
-      background:transparent;
-      font-size:13px;
-      color:var(--text-normal);
-    `;
 
-    const closeBtn = headerRow.createEl("button");
-    closeBtn.style.cssText = `
-      background:transparent;
-      border:none;
-      cursor:pointer;
-      padding:4px;
-      display:flex;align-items:center;justify-content:center;
-      color:var(--text-muted);
-      border-radius:50%;
-      width:24px;height:24px;
-    `;
+    const closeBtn = headerRow.createEl("button", { cls: "claude-slash-close" });
     setIcon(closeBtn, "x-circle");
     closeBtn.onclick = () => this.closeSlashCommand();
 
-    const listEl = popup.createDiv();
-    listEl.style.cssText = `
-      display:flex;flex-direction:column;
-      overflow-y:auto;
-      max-height:220px;
-    `;
+    const listEl = popup.createDiv({ cls: "claude-slash-list" });
 
     let filtered: SlashCommand[] = commands;
     let activeIdx = 0;
@@ -1061,15 +865,9 @@ export class ClaudeView extends ItemView {
     const render = () => {
       listEl.empty();
       filtered.forEach((cmd, i) => {
-        const item = listEl.createDiv();
-        const isActive = i === activeIdx;
-        item.style.cssText = `
-          padding:8px 10px;
-          cursor:pointer;
-          border-radius:6px;
-          font-size:13px;
-          background:${isActive ? "var(--background-modifier-hover)" : "transparent"};
-        `;
+        const item = listEl.createDiv({
+          cls: i === activeIdx ? "claude-slash-item is-active" : "claude-slash-item",
+        });
         const text = cmd.hint
           ? `${cmd.label} — ${cmd.hint}`
           : cmd.label;
@@ -1084,8 +882,10 @@ export class ClaudeView extends ItemView {
         };
       });
       if (filtered.length === 0) {
-        const empty = listEl.createDiv({ text: t("slash.noMatch") });
-        empty.style.cssText = "padding:8px 10px;font-size:12px;opacity:0.6;";
+        listEl.createDiv({
+          cls: "claude-slash-empty",
+          text: t("slash.noMatch"),
+        });
       }
     };
 
@@ -1213,27 +1013,21 @@ export class ClaudeView extends ItemView {
     this.messages.push(msg);
     const isUser = msg.role === "user";
     const msgEl = this.messagesEl.createDiv({
-      cls: isUser ? "claude-user-msg" : "claude-assistant-msg",
+      cls: isUser
+        ? "claude-msg claude-msg-user claude-user-msg"
+        : "claude-msg claude-msg-assistant claude-assistant-msg",
     });
-    msgEl.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 90%;
-      align-self: ${isUser ? "flex-end" : "flex-start"};
-      background: var(--${isUser ? "interactive-accent" : "background-secondary"});
-      color: var(--${isUser ? "text-on-accent" : "text-normal"});
-      word-break: break-word;
-    `;
     forceSelectable(msgEl);
-    const label = msgEl.createDiv({ text: isUser ? "You" : "Claude" });
-    label.style.cssText = "font-size:11px;opacity:0.7;margin-bottom:4px;";
-    const body = msgEl.createDiv();
+    msgEl.createDiv({
+      cls: "claude-msg-label",
+      text: isUser ? "You" : "Claude",
+    });
+    const body = msgEl.createDiv({ cls: "claude-msg-body" });
     forceSelectable(body);
     if (isUser) {
-      body.style.whiteSpace = "pre-wrap";
       body.setText(msg.content);
     } else {
-      MarkdownRenderer.render(this.app, msg.content, body, "", this);
+      void MarkdownRenderer.render(this.app, msg.content, body, "", this);
     }
   }
 
@@ -1249,12 +1043,11 @@ export class ClaudeView extends ItemView {
   private refreshModelButton(): void {
     if (!this.modelBtnEl) return;
     this.modelBtnEl.empty();
-    const labelEl = this.modelBtnEl.createSpan({
+    this.modelBtnEl.createSpan({
+      cls: "claude-model-btn-label",
       text: modelLabel(this.currentModel),
     });
-    labelEl.style.fontWeight = "500";
-    const chevron = this.modelBtnEl.createSpan();
-    chevron.style.cssText = "display:flex;align-items:center;";
+    const chevron = this.modelBtnEl.createSpan({ cls: "claude-model-btn-chevron" });
     setIcon(chevron, "chevron-down");
   }
 
@@ -1267,19 +1060,7 @@ export class ClaudeView extends ItemView {
 
   private renderEmptyState(): void {
     if (this.emptyStateEl) return;
-    const empty = this.messagesEl.createDiv();
-    empty.style.cssText = `
-      margin:auto;
-      max-width:480px;
-      text-align:center;
-      opacity:0.75;
-      font-size:13px;
-      line-height:1.7;
-      padding:20px 24px;
-      background:var(--background-secondary);
-      border-radius:10px;
-      white-space:pre-wrap;
-    `;
+    const empty = this.messagesEl.createDiv({ cls: "claude-empty-state" });
     empty.setText(
       `${t("empty.line1")}\n${t("empty.line2")}\n${t("empty.line3")}`
     );
@@ -1306,9 +1087,7 @@ interface SlashCommand {
 }
 
 function forceSelectable(el: HTMLElement): void {
-  el.style.setProperty("user-select", "text", "important");
-  el.style.setProperty("-webkit-user-select", "text", "important");
-  el.style.cursor = "text";
+  el.addClass("claude-selectable");
 }
 
 class FileSuggestModal extends FuzzySuggestModal<TFile> {
@@ -1350,9 +1129,10 @@ class SessionListModal extends Modal {
     contentEl.empty();
     contentEl.createEl("h3", { text: t("modal.history") });
 
-    const newBtn = contentEl.createEl("button", { text: t("modal.startNew") });
-    newBtn.style.cssText =
-      "width:100%;margin-bottom:12px;padding:8px;cursor:pointer;";
+    const newBtn = contentEl.createEl("button", {
+      cls: "claude-session-new-btn",
+      text: t("modal.startNew"),
+    });
     newBtn.onclick = () => {
       this.onNew();
       this.close();
@@ -1375,47 +1155,26 @@ class SessionListModal extends Modal {
   }
 
   private renderRow(session: SessionRecord): void {
-    const item = this.listEl.createDiv();
-    item.style.cssText = `
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:10px;
-      margin-bottom:6px;
-      background: var(--background-secondary);
-      border-radius:6px;
-    `;
+    const item = this.listEl.createDiv({ cls: "claude-session-row" });
 
-    const content = item.createDiv();
-    content.style.cssText = "flex:1;min-width:0;cursor:pointer;";
-    const title = content.createEl("div", {
+    const content = item.createDiv({ cls: "claude-session-content" });
+    content.createEl("div", {
+      cls: "claude-session-title",
       text: session.customName || session.previewText || t("modal.noContent"),
     });
-    title.style.cssText =
-      "font-size:13px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-    const meta = content.createEl("small", {
+    content.createEl("small", {
+      cls: "claude-session-meta",
       text: `${session.model || "?"} · ${new Date(
         session.lastMessageAt
       ).toLocaleString()}`,
     });
-    meta.style.cssText = "opacity:0.7;";
     content.onclick = () => {
       this.onSelect(session.sessionId);
       this.close();
     };
 
     if (this.onDelete) {
-      const delBtn = item.createEl("button");
-      delBtn.style.cssText = `
-        background:transparent;
-        border:none;
-        cursor:pointer;
-        padding:4px;
-        color:var(--text-muted);
-        border-radius:4px;
-        display:flex;align-items:center;justify-content:center;
-        flex-shrink:0;
-      `;
+      const delBtn = item.createEl("button", { cls: "claude-session-del-btn" });
       setIcon(delBtn, "x");
       delBtn.setAttribute("title", t("modal.delete"));
 
@@ -1423,8 +1182,7 @@ class SessionListModal extends Modal {
       let revertTimer: number | null = null;
       const reset = () => {
         confirming = false;
-        delBtn.style.color = "var(--text-muted)";
-        delBtn.style.background = "transparent";
+        delBtn.removeClass("is-confirming");
         delBtn.empty();
         setIcon(delBtn, "x");
         delBtn.setAttribute("title", t("modal.delete"));
@@ -1434,8 +1192,7 @@ class SessionListModal extends Modal {
         e.stopPropagation();
         if (!confirming) {
           confirming = true;
-          delBtn.style.color = "var(--text-on-accent)";
-          delBtn.style.background = "var(--background-modifier-error)";
+          delBtn.addClass("is-confirming");
           delBtn.empty();
           setIcon(delBtn, "trash-2");
           delBtn.setAttribute("title", t("modal.confirmDelete"));
