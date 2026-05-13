@@ -47,8 +47,8 @@ Settings → Community plugins → Browse → search **"Claude Code Chat"** → 
 3. Enable Claude Code Chat in Community plugins.
 
 ### Manual
-1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/ODDOLIVE/obsidian-claude-code-chat/releases).
-2. Copy both into `<vault>/.obsidian/plugins/obsidian-claude-code-chat/`.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/ODDOLIVE/obsidian-claude-code-chat/releases).
+2. Copy them all into `<vault>/.obsidian/plugins/obsidian-claude-code-chat/`.
 3. Reload Obsidian → enable the plugin.
 
 ---
