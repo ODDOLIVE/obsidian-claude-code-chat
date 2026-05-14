@@ -10,7 +10,7 @@ OAuth or API key, session resume, file attachments, Markdown export, and a chat 
 
 If this plugin helps you, you can support its development on Ko-fi. Thanks!
 
-<a href="https://ko-fi.com/oddolive"><img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" alt="Buy me a coffee on Ko-fi" height="54"></a>
+<a href="https://ko-fi.com/oddolive"><img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" alt="Buy me a coffee on Ko-fi" height="45"></a>
 
 </div>
 
