@@ -42,7 +42,7 @@ export default class ClaudeCodeChatPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "open-claude-code-chat",
+      id: "open",
       name: t("cmd.openChat"),
       callback: () => {
         void this.activateView();
@@ -50,7 +50,7 @@ export default class ClaudeCodeChatPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "claude-chat-new",
+      id: "new-chat",
       name: t("cmd.newChat"),
       callback: async () => {
         const view = await this.getOrOpenView();
@@ -59,7 +59,7 @@ export default class ClaudeCodeChatPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "claude-chat-save",
+      id: "save-chat",
       name: t("cmd.saveChat"),
       callback: async () => {
         const view = await this.getOrOpenView();
