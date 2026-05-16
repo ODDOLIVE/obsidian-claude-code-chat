@@ -1,9 +1,9 @@
 {
-  "id": "obsidian-claude-code-chat",
+  "id": "claude-code-chat",
   "name": "Claude Code Chat",
   "version": "0.1.0",
   "minAppVersion": "1.4.0",
-  "description": "Chat with the Claude Code CLI from an Obsidian side panel. Supports OAuth or API key, session resume, attachments, and Markdown export.",
+  "description": "Chat with the Claude Code CLI from a side panel. Supports OAuth or API key, session resume, attachments, and Markdown export.",
   "author": "ODDOLIVE",
   "authorUrl": "https://github.com/ODDOLIVE",
   "fundingUrl": "https://ko-fi.com/oddolive",
