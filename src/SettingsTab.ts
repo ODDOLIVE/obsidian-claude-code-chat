@@ -379,7 +379,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
       text: t("auth.refresh"),
     });
 
-    const renderStatus = (s: { cliInstalled: boolean; cliVersion: string; apiKeyAvailable: boolean } | null) => {
+    const renderStatus = (s: { cliInstalled: boolean; cliVersion: string; loginDetected: boolean; loginLabel: string; apiKeyAvailable: boolean } | null) => {
       statusEl.empty();
       if (!s) { statusEl.setText("…"); return; }
       const cliLine = statusEl.createDiv({
@@ -394,17 +394,20 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
       );
       if (!s.cliInstalled) {
         statusEl.createDiv({ cls: "claude-conn-hint", text: t("auth.codexCliMissingDesc") });
+        return;
       }
-      const keyLine = statusEl.createDiv({
-        cls: s.apiKeyAvailable
-          ? "claude-conn-status-line is-success"
-          : "claude-conn-status-line is-error",
-      });
-      keyLine.setText(
-        s.apiKeyAvailable
-          ? "✓ " + t("auth.codexApiKeySet")
-          : "✗ " + t("auth.codexApiKeyMissing")
-      );
+      // Auth: login session takes priority over API key
+      if (s.loginDetected) {
+        const loginLine = statusEl.createDiv({ cls: "claude-conn-status-line is-success" });
+        loginLine.setText("✓ " + t("auth.codexLoggedIn", s.loginLabel));
+      } else if (s.apiKeyAvailable) {
+        const keyLine = statusEl.createDiv({ cls: "claude-conn-status-line is-success" });
+        keyLine.setText("✓ " + t("auth.codexApiKeySet"));
+      } else {
+        const noAuthLine = statusEl.createDiv({ cls: "claude-conn-status-line is-error" });
+        noAuthLine.setText("✗ " + t("auth.codexNotAuthed"));
+        statusEl.createDiv({ cls: "claude-conn-hint", text: t("auth.codexNotAuthedDesc") });
+      }
     };
 
     const refresh = async () => {

@@ -586,8 +586,10 @@ export class ClaudeView extends ItemView {
 
     let useApiKey: boolean;
     if (isCodex) {
-      // Codex auth: API key only (no OAuth concept)
-      useApiKey = !!apiKey;
+      // codexApiKeyOnly forces API key; otherwise login session takes priority
+      // (CodexRunner does NOT set OPENAI_API_KEY when useApiKey=false, so the
+      // CLI uses its stored 'codex login' session automatically)
+      useApiKey = apiKeyOnly;
     } else {
       const oauthDetected = AuthService.detectOAuth();
       // apiKeyOnly forces plugin-scoped auth: ignore system OAuth, use API key.

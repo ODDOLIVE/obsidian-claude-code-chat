@@ -163,36 +163,55 @@ export function extractLoginUrl(text: string): string | null {
 export interface CodexAuthStatus {
   cliInstalled: boolean;
   cliVersion: string;
+  loginDetected: boolean;
+  loginLabel: string;
   apiKeyAvailable: boolean;
 }
 
 export class CodexAuthService {
   static async detect(codexPath: string, apiKey: string): Promise<CodexAuthStatus> {
-    const execPath = await CodexRunner.findCodexPath();
-    const resolvedPath = codexPath && isAbsolute(codexPath) ? codexPath : execPath;
+    const foundPath = await CodexRunner.findCodexPath();
+    const resolvedPath = (codexPath && isAbsolute(codexPath)) ? codexPath : foundPath;
+
+    const isWin = process.platform === "win32";
+    const extra = isWin ? "" : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
+    const env = { ...process.env, PATH: (process.env.PATH ?? "") + extra, ELECTRON_RUN_AS_NODE: undefined };
+    const useShell = isWin && /\.(cmd|bat)$/i.test(resolvedPath);
+    const quoted = useShell ? `"${resolvedPath}"` : JSON.stringify(resolvedPath);
 
     let cliInstalled = false;
     let cliVersion = "";
-    if (resolvedPath) {
+    try {
+      const { stdout } = await promisify(exec)(`${quoted} --version`, { timeout: 8000, env });
+      cliVersion = stdout.trim().split(/\r?\n/)[0] ?? "";
+      cliInstalled = true;
+    } catch {
+      cliInstalled = false;
+    }
+
+    let loginDetected = false;
+    let loginLabel = "";
+    if (cliInstalled) {
       try {
-        const isWin = process.platform === "win32";
-        const extra = isWin ? "" : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
-        const env = { ...process.env, PATH: (process.env.PATH ?? "") + extra };
-        const useShell = isWin && /\.(cmd|bat)$/i.test(resolvedPath);
-        const cmd = useShell
-          ? `"${resolvedPath}" --version`
-          : JSON.stringify(resolvedPath) + " --version";
-        const { stdout } = await promisify(exec)(cmd, { timeout: 8000, env });
-        cliVersion = stdout.trim().split(/\r?\n/)[0] ?? "";
-        cliInstalled = true;
+        // `codex login status` exits 0 and prints "Logged in using ChatGPT" (or similar)
+        const { stdout, stderr } = await promisify(exec)(`${quoted} login status`, { timeout: 8000, env });
+        const out = (stdout + stderr).trim();
+        if (/logged.?in/i.test(out)) {
+          loginDetected = true;
+          // Extract the label after "Logged in" e.g. "Logged in using ChatGPT" → "ChatGPT"
+          const m = out.match(/logged.?in(?:\s+using\s+(.+))?/i);
+          loginLabel = m?.[1]?.trim() || "OAuth";
+        }
       } catch {
-        cliInstalled = false;
+        loginDetected = false;
       }
     }
 
     return {
       cliInstalled,
       cliVersion,
+      loginDetected,
+      loginLabel,
       apiKeyAvailable: !!apiKey.trim(),
     };
   }

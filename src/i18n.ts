@@ -210,6 +210,9 @@ const STRINGS = {
     "auth.codexCliMissing": "Codex CLI not found",
     "auth.codexCliMissingDesc":
       "Install with: npm install -g @openai/codex",
+    "auth.codexLoggedIn": (label: string) => `Logged in via ${label}`,
+    "auth.codexNotAuthed": "Not authenticated",
+    "auth.codexNotAuthedDesc": "Run 'codex login' in a terminal, or enter an OpenAI API key below.",
     "auth.codexApiKeySet": "OpenAI API key set",
     "auth.codexApiKeyMissing": "OpenAI API key not set (required unless using codex login)",
     "auth.codexApiKey": "OpenAI API key",
@@ -435,6 +438,9 @@ const STRINGS = {
     "auth.codexCliMissing": "Codex CLI를 찾을 수 없음",
     "auth.codexCliMissingDesc":
       "설치 명령: npm install -g @openai/codex",
+    "auth.codexLoggedIn": (label: string) => `${label}로 로그인됨`,
+    "auth.codexNotAuthed": "인증되지 않음",
+    "auth.codexNotAuthedDesc": "터미널에서 'codex login'을 실행하거나 아래에 OpenAI API 키를 입력하세요.",
     "auth.codexApiKeySet": "OpenAI API 키 설정됨",
     "auth.codexApiKeyMissing": "OpenAI API 키 미설정 (codex login 미사용 시 필요)",
     "auth.codexApiKey": "OpenAI API 키",
