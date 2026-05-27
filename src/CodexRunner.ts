@@ -57,20 +57,19 @@ export class CodexRunner implements AgentRunner {
       ? ""
       : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
 
-    // Build args: exec [resume <id>] <prompt> --json --model <model> -C <cwd>
+    // Prompt is written to stdin via "-" to avoid shell quoting/splitting issues
+    // on Windows where .cmd wrappers pass args through cmd.exe unexpanded.
     const args: string[] = ["exec"];
 
     if (options.sessionFlag === "--resume" && options.sessionId) {
       args.push("resume", options.sessionId);
     }
 
-    args.push(options.prompt);
+    args.push("-");          // read prompt from stdin
     args.push("--json");
     args.push("-m", options.model);
     // Skip git repo check so it works in any directory (vault may not be a repo)
     args.push("--skip-git-repo-check");
-    // Use read-only sandbox to avoid accidental writes
-    args.push("-s", "read-only");
 
     const env: Record<string, string | undefined> = {
       ...process.env,
@@ -91,11 +90,17 @@ export class CodexRunner implements AgentRunner {
         cwd: options.vaultPath,
         env,
         shell: useShell,
+        // stdin must be piped so we can write the prompt
+        stdio: ["pipe", "pipe", "pipe"],
       });
     } catch (e) {
       callbacks.onError(t("notice.processError", (e as Error).message));
       return;
     }
+
+    // Write prompt to stdin and close it so the CLI starts processing
+    proc.stdin?.write(options.prompt, "utf-8");
+    proc.stdin?.end();
 
     this.proc = proc;
     let stdoutBuffer = "";
