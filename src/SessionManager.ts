@@ -9,6 +9,7 @@ export interface SessionRecord {
   model: string;
   customName?: string;
   lastSavedPath?: string;
+  sharedWithVSCode?: boolean;
 }
 
 const MAX_SESSIONS = 50;
@@ -70,6 +71,21 @@ export class SessionManager {
     const rec = this.sessions.find((s) => s.sessionId === this.currentSessionId);
     if (rec) {
       rec.lastSavedPath = path;
+      void this.saveSessions();
+    }
+  }
+
+  isCurrentSessionShared(): boolean {
+    if (!this.currentSessionId) return false;
+    const rec = this.sessions.find((s) => s.sessionId === this.currentSessionId);
+    return rec?.sharedWithVSCode ?? false;
+  }
+
+  setSharedWithVSCode(shared: boolean): void {
+    if (!this.currentSessionId) return;
+    const rec = this.sessions.find((s) => s.sessionId === this.currentSessionId);
+    if (rec) {
+      rec.sharedWithVSCode = shared;
       void this.saveSessions();
     }
   }

@@ -60,6 +60,11 @@
   color: var(--text-muted);
 }
 
+.claude-header-icon-btn.claude-share-active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
 /* ----- Search dropdown ----- */
 .claude-search-dropdown {
   position: absolute;
@@ -624,4 +629,31 @@
 .claude-confirm-btn-danger {
   background: var(--background-modifier-error);
   color: var(--text-on-accent);
+}
+
+/* ----- VSCodeSyncModal ----- */
+.claude-vscode-sync-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.claude-vscode-sync-code-wrap {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.claude-vscode-sync-code {
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  color: var(--text-normal);
+  word-break: break-all;
+}
+
+.claude-vscode-sync-copy-btn {
+  display: block;
+  width: 100%;
 }

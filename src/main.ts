@@ -67,6 +67,15 @@ export default class ClaudeCodeChatPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "share-vscode",
+      name: t("cmd.shareVSCode"),
+      callback: async () => {
+        const view = await this.getOrOpenView();
+        view?.shareWithVSCode();
+      },
+    });
+
     this.addSettingTab(new ClaudeCodeSettingsTab(this.app, this));
   }
 
