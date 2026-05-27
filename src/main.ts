@@ -18,6 +18,12 @@ export const DEFAULT_SETTINGS: ClaudeCodeSettings = {
   workingDirectory: "",
   titleSync: true,
   attachmentsFolder: "",
+  // Codex provider defaults
+  codexPath: "codex",
+  defaultProvider: "claude",
+  openaiApiKey: "",
+  codexApiKeyOnly: false,
+  defaultModelCodex: "codex-mini-latest",
 };
 
 export default class ClaudeCodeChatPlugin extends Plugin {

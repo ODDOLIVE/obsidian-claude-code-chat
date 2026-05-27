@@ -4,6 +4,7 @@ import { delimiter, isAbsolute, join } from "path";
 import { promisify } from "util";
 import { t } from "./i18n";
 import { TEXT_EXTENSIONS } from "./types";
+import type { AgentRunner, RunOptions, RunCallbacks } from "./AgentRunner";
 
 // Hard cap for the prompt we hand to `claude -p "..."`. Windows command-line
 // limit is around 32 KB; we stay under it with margin for the rest of argv.
@@ -11,26 +12,7 @@ const MAX_PROMPT_BYTES = 28_000;
 
 const execAsync = promisify(exec);
 
-export interface RunOptions {
-  prompt: string;
-  model: string;
-  claudePath: string;
-  vaultPath: string;
-  sessionFlag: "--continue" | "--resume" | null;
-  sessionId?: string;
-  attachedFilePaths?: string[];
-  apiKey?: string;
-  useApiKey?: boolean;
-}
-
-export interface RunCallbacks {
-  onChunk: (text: string) => void;
-  onSessionId: (id: string) => void;
-  onComplete: () => void;
-  onError: (message: string) => void;
-}
-
-export class ClaudeRunner {
+export class ClaudeRunner implements AgentRunner {
   private proc: ChildProcess | null = null;
   private resolvedPath: string | null = null;
 
@@ -104,7 +86,7 @@ export class ClaudeRunner {
       ? ""
       : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
 
-    let execPath = options.claudePath;
+    let execPath = options.execPath;
     if (!isAbsolute(execPath)) {
       if (!this.resolvedPath) {
         this.resolvedPath = await ClaudeRunner.findClaudePath();

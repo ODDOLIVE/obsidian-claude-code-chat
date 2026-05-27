@@ -1,3 +1,5 @@
+export type Provider = "claude" | "codex";
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -14,6 +16,12 @@ export interface ClaudeCodeSettings {
   workingDirectory: string;
   titleSync: boolean;
   attachmentsFolder: string;
+  // Codex provider
+  codexPath: string;
+  defaultProvider: Provider;
+  openaiApiKey: string;
+  codexApiKeyOnly: boolean;
+  defaultModelCodex: string;
 }
 
 // File extensions whose contents are inlined into the prompt as text.

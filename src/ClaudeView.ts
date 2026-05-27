@@ -12,10 +12,12 @@ import {
   setIcon,
 } from "obsidian";
 import type ClaudeCodeChatPlugin from "./main";
-import { ClaudeRunner, RunOptions } from "./ClaudeRunner";
+import type { AgentRunner, RunOptions } from "./AgentRunner";
+import { ClaudeRunner } from "./ClaudeRunner";
+import { CodexRunner } from "./CodexRunner";
 import { SessionManager, SessionRecord } from "./SessionManager";
 import { SaveManager } from "./SaveManager";
-import { ChatMessage, MAX_DROP_FILE_SIZE } from "./types";
+import { ChatMessage, MAX_DROP_FILE_SIZE, Provider } from "./types";
 import { t } from "./i18n";
 import { AuthService } from "./AuthService";
 
@@ -27,8 +29,15 @@ const MODELS: Array<{ id: string; label: string }> = [
   { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
 ];
 
-function modelLabel(id: string): string {
-  return MODELS.find((m) => m.id === id)?.label ?? id;
+const CODEX_MODELS: Array<{ id: string; label: string }> = [
+  { id: "codex-mini-latest", label: "Codex mini" },
+  { id: "o4-mini", label: "o4-mini" },
+  { id: "o3", label: "o3" },
+];
+
+function modelLabel(id: string, provider: Provider): string {
+  const list = provider === "codex" ? CODEX_MODELS : MODELS;
+  return list.find((m) => m.id === id)?.label ?? id;
 }
 
 export class ClaudeView extends ItemView {
@@ -54,6 +63,7 @@ export class ClaudeView extends ItemView {
   private inputEl!: HTMLTextAreaElement;
   private plusBtnEl!: HTMLButtonElement;
   private slashBtnEl!: HTMLButtonElement;
+  private providerBtnEl!: HTMLButtonElement;
   private modelBtnEl!: HTMLButtonElement;
   private sendBtnEl!: HTMLButtonElement;
   private attachedFileDisplayEl: HTMLElement | null = null;
@@ -61,6 +71,7 @@ export class ClaudeView extends ItemView {
 
   // State
   private currentModel: string;
+  private currentProvider: Provider;
   private streamingEl: HTMLDivElement | null = null;
   private streamingBuffer = "";
   private attachedFiles: TFile[] = [];
@@ -68,7 +79,11 @@ export class ClaudeView extends ItemView {
   private wasCancelled = false;
   private messages: ChatMessage[] = [];
 
-  private runner = new ClaudeRunner();
+  private claudeRunner: AgentRunner = new ClaudeRunner();
+  private codexRunner: AgentRunner = new CodexRunner();
+  private get runner(): AgentRunner {
+    return this.currentProvider === "codex" ? this.codexRunner : this.claudeRunner;
+  }
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -77,7 +92,10 @@ export class ClaudeView extends ItemView {
     private saveManager: SaveManager
   ) {
     super(leaf);
-    this.currentModel = plugin.settings.defaultModel;
+    this.currentProvider = plugin.settings.defaultProvider ?? "claude";
+    this.currentModel = this.currentProvider === "codex"
+      ? (plugin.settings.defaultModelCodex || CODEX_MODELS[0].id)
+      : plugin.settings.defaultModel;
   }
 
   getViewType(): string {
@@ -309,7 +327,11 @@ export class ClaudeView extends ItemView {
     // Spacer
     controls.createDiv({ cls: "claude-input-spacer" });
 
-    // Right controls: model dropdown + send
+    // Right controls: provider toggle + model dropdown + send
+    this.providerBtnEl = controls.createEl("button", { cls: "claude-provider-btn" });
+    this.refreshProviderButton();
+    this.providerBtnEl.onclick = (e) => this.openProviderMenu(e);
+
     this.modelBtnEl = controls.createEl("button", { cls: "claude-model-btn" });
     this.refreshModelButton();
     this.modelBtnEl.onclick = (e) => this.openModelMenu(e);
@@ -355,9 +377,10 @@ export class ClaudeView extends ItemView {
         : "claude-msg claude-msg-assistant claude-assistant-msg",
     });
     forceSelectable(msgEl);
+    const assistantLabel = this.currentProvider === "codex" ? "Codex" : "Claude";
     msgEl.createDiv({
       cls: "claude-msg-label",
-      text: isUser ? "You" : "Claude",
+      text: isUser ? "You" : assistantLabel,
     });
     const body = msgEl.createDiv({ cls: "claude-msg-body" });
     forceSelectable(body);
@@ -385,7 +408,10 @@ export class ClaudeView extends ItemView {
       cls: "claude-msg claude-msg-assistant claude-assistant-msg",
     });
     forceSelectable(wrap);
-    wrap.createDiv({ cls: "claude-msg-label", text: "Claude" });
+    wrap.createDiv({
+      cls: "claude-msg-label",
+      text: this.currentProvider === "codex" ? "Codex" : "Claude",
+    });
     const body = wrap.createDiv({
       cls: "claude-stream-body is-streaming",
     });
@@ -441,6 +467,7 @@ export class ClaudeView extends ItemView {
     this.attachNoteBtnEl.disabled = loading;
     this.plusBtnEl.disabled = loading;
     this.slashBtnEl.disabled = loading;
+    this.providerBtnEl.disabled = loading;
     this.modelBtnEl.disabled = loading;
     if (loading) {
       this.sendBtnEl.empty();
@@ -507,17 +534,26 @@ export class ClaudeView extends ItemView {
     if (!prompt) return;
     this.wasCancelled = false;
 
-    const apiKey = this.plugin.settings.apiKey?.trim() ?? "";
-    const apiKeyOnly = this.plugin.settings.apiKeyOnly;
+    const provider = this.currentProvider;
+    const isCodex = provider === "codex";
+
+    const apiKey = isCodex
+      ? (this.plugin.settings.openaiApiKey?.trim() ?? "")
+      : (this.plugin.settings.apiKey?.trim() ?? "");
+    const apiKeyOnly = isCodex
+      ? this.plugin.settings.codexApiKeyOnly
+      : this.plugin.settings.apiKeyOnly;
 
     // Strict guard: in API-token-only mode, refuse to fall back to OAuth.
     if (apiKeyOnly && !apiKey) {
-      this.appendErrorMessage(t("error.apiKeyOnlyNoToken"));
+      this.appendErrorMessage(
+        isCodex ? t("error.codexApiKeyOnlyNoToken") : t("error.apiKeyOnlyNoToken")
+      );
       return;
     }
 
     const model = this.currentModel;
-    this.sessionManager.setPreview(prompt, model);
+    this.sessionManager.setPreview(prompt, model, provider);
 
     // Title sync: on the very first prompt of a new session, prepend a
     // "[Title: <customName>]" line so VS Code's Claude Code history view —
@@ -548,22 +584,31 @@ export class ClaudeView extends ItemView {
     const cwdOverride = this.plugin.settings.workingDirectory?.trim();
     const cwd = cwdOverride || vaultPath;
 
-    const oauthDetected = AuthService.detectOAuth();
-    // apiKeyOnly forces plugin-scoped auth: ignore system OAuth, use API key.
-    const useApiKey = apiKeyOnly
-      ? !!apiKey
-      : !oauthDetected && !!apiKey;
+    let useApiKey: boolean;
+    if (isCodex) {
+      // Codex auth: API key only (no OAuth concept)
+      useApiKey = !!apiKey;
+    } else {
+      const oauthDetected = AuthService.detectOAuth();
+      // apiKeyOnly forces plugin-scoped auth: ignore system OAuth, use API key.
+      useApiKey = apiKeyOnly ? !!apiKey : !oauthDetected && !!apiKey;
+    }
+
+    const execPath = isCodex
+      ? (this.plugin.settings.codexPath || "codex")
+      : this.plugin.settings.claudePath;
 
     const options: RunOptions = {
       prompt: cliPrompt,
       model,
-      claudePath: this.plugin.settings.claudePath,
+      execPath,
       vaultPath: cwd,
       sessionFlag: this.sessionManager.getSessionFlag(),
       sessionId: this.sessionManager.getCurrentSessionId() ?? undefined,
-      attachedFilePaths: this.getAttachedFilePaths(),
+      attachedFilePaths: isCodex ? [] : this.getAttachedFilePaths(),
       apiKey,
       useApiKey,
+      provider,
     };
 
     void this.runner.run(options, {
@@ -636,10 +681,18 @@ export class ClaudeView extends ItemView {
   }
 
   private refreshShareButton(): void {
-    if (this.sessionManager.isCurrentSessionShared()) {
-      this.shareBtnEl.addClass("claude-share-active");
-    } else {
+    if (this.currentProvider === "codex") {
       this.shareBtnEl.removeClass("claude-share-active");
+      this.shareBtnEl.addClass("claude-share-disabled");
+      this.shareBtnEl.setAttribute("title", t("notice.shareCodexNotSupported"));
+    } else {
+      this.shareBtnEl.removeClass("claude-share-disabled");
+      this.shareBtnEl.setAttribute("title", t("header.shareVSCode"));
+      if (this.sessionManager.isCurrentSessionShared()) {
+        this.shareBtnEl.addClass("claude-share-active");
+      } else {
+        this.shareBtnEl.removeClass("claude-share-active");
+      }
     }
   }
 
@@ -648,6 +701,10 @@ export class ClaudeView extends ItemView {
   }
 
   private onShareWithVSCode(): void {
+    if (this.currentProvider === "codex") {
+      new Notice(t("notice.shareCodexNotSupported"));
+      return;
+    }
     const sessionId = this.sessionManager.getCurrentSessionId();
     if (!sessionId) {
       new Notice(t("notice.shareNoSession"));
@@ -851,7 +908,8 @@ export class ClaudeView extends ItemView {
 
   private openModelMenu(evt: MouseEvent): void {
     const menu = new Menu();
-    for (const m of MODELS) {
+    const list = this.currentProvider === "codex" ? CODEX_MODELS : MODELS;
+    for (const m of list) {
       menu.addItem((item) =>
         item
           .setTitle(m.label)
@@ -868,8 +926,9 @@ export class ClaudeView extends ItemView {
       return;
     }
 
+    const modelList = this.currentProvider === "codex" ? CODEX_MODELS : MODELS;
     const commands: SlashCommand[] = [
-      ...MODELS.map<SlashCommand>((m) => ({
+      ...modelList.map<SlashCommand>((m) => ({
         id: "model",
         label: `${t("slash.modelPrefix")} ${m.label}`,
         hint: m.id,
@@ -1016,7 +1075,7 @@ export class ClaudeView extends ItemView {
       this.sessionManager.getCurrentSessionId() === sid;
     new SessionListModal(
       this.app,
-      this.sessionManager.getSessions(),
+      this.sessionManager.getSessions(this.currentProvider),
       (sessionId) => {
         this.sessionManager.resumeSession(sessionId);
         this.restoreSessionMessages(sessionId);
@@ -1039,6 +1098,11 @@ export class ClaudeView extends ItemView {
   }
 
   private restoreSessionMessages(sessionId: string): void {
+    // Restore provider to match the session being resumed
+    const sessionProvider = this.sessionManager.getSessionProvider(sessionId);
+    if (sessionProvider !== this.currentProvider) {
+      this.setProvider(sessionProvider);
+    }
     this.clearMessages();
     const history = this.sessionManager.getMessages(sessionId);
     if (history.length === 0) {
@@ -1088,10 +1152,53 @@ export class ClaudeView extends ItemView {
     this.modelBtnEl.empty();
     this.modelBtnEl.createSpan({
       cls: "claude-model-btn-label",
-      text: modelLabel(this.currentModel),
+      text: modelLabel(this.currentModel, this.currentProvider),
     });
     const chevron = this.modelBtnEl.createSpan({ cls: "claude-model-btn-chevron" });
     setIcon(chevron, "chevron-down");
+  }
+
+  private refreshProviderButton(): void {
+    if (!this.providerBtnEl) return;
+    this.providerBtnEl.empty();
+    this.providerBtnEl.createSpan({
+      cls: "claude-provider-btn-label",
+      text: this.currentProvider === "codex" ? "Codex" : "Claude",
+    });
+    const chevron = this.providerBtnEl.createSpan({ cls: "claude-model-btn-chevron" });
+    setIcon(chevron, "chevron-down");
+  }
+
+  private setProvider(provider: Provider): void {
+    if (this.currentProvider === provider) return;
+    this.currentProvider = provider;
+    // Reset model to provider default
+    if (provider === "codex") {
+      this.currentModel = this.plugin.settings.defaultModelCodex || CODEX_MODELS[0].id;
+    } else {
+      this.currentModel = this.plugin.settings.defaultModel;
+    }
+    this.refreshProviderButton();
+    this.refreshModelButton();
+    // Update share button (Codex doesn't support VS Code share)
+    this.refreshShareButton();
+  }
+
+  private openProviderMenu(evt: MouseEvent): void {
+    const menu = new Menu();
+    const providers: Array<{ id: Provider; label: string }> = [
+      { id: "claude", label: "Claude" },
+      { id: "codex", label: "Codex" },
+    ];
+    for (const p of providers) {
+      menu.addItem((item) =>
+        item
+          .setTitle(p.label)
+          .setChecked(p.id === this.currentProvider)
+          .onClick(() => this.setProvider(p.id))
+      );
+    }
+    menu.showAtMouseEvent(evt);
   }
 
   private clearMessages(): void {
@@ -1205,9 +1312,10 @@ class SessionListModal extends Modal {
       cls: "claude-session-title",
       text: session.customName || session.previewText || t("modal.noContent"),
     });
+    const providerLabel = session.provider === "codex" ? "Codex" : "Claude";
     content.createEl("small", {
       cls: "claude-session-meta",
-      text: `${session.model || "?"} · ${new Date(
+      text: `${providerLabel} · ${session.model || "?"} · ${new Date(
         session.lastMessageAt
       ).toLocaleString()}`,
     });

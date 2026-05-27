@@ -1,5 +1,5 @@
 import type ClaudeCodeChatPlugin from "./main";
-import { ChatMessage } from "./types";
+import { ChatMessage, Provider } from "./types";
 
 export interface SessionRecord {
   sessionId: string;
@@ -7,6 +7,7 @@ export interface SessionRecord {
   lastMessageAt: string;
   previewText: string;
   model: string;
+  provider?: Provider;
   customName?: string;
   lastSavedPath?: string;
   sharedWithVSCode?: boolean;
@@ -22,6 +23,7 @@ export class SessionManager {
   private pendingPreview: string | null = null;
   private pendingModel: string | null = null;
   private pendingCustomName: string | null = null;
+  private pendingProvider: Provider | null = null;
 
   constructor(private plugin: ClaudeCodeChatPlugin) {}
 
@@ -111,11 +113,13 @@ export class SessionManager {
         lastMessageAt: now,
         previewText: this.pendingPreview ?? "",
         model: this.pendingModel ?? "",
+        provider: this.pendingProvider ?? undefined,
         customName: this.pendingCustomName ?? undefined,
       });
     }
     this.pendingPreview = null;
     this.pendingCustomName = null;
+    this.pendingProvider = null;
     void this.saveSessions();
   }
 
@@ -124,16 +128,19 @@ export class SessionManager {
     this.isNewSession = true;
     this.pendingPreview = null;
     this.pendingCustomName = null;
+    this.pendingProvider = null;
   }
 
-  setPreview(text: string, model: string): void {
+  setPreview(text: string, model: string, provider?: Provider): void {
     const preview = text.slice(0, 50);
     this.pendingModel = model;
+    if (provider) this.pendingProvider = provider;
     if (this.currentSessionId) {
       const rec = this.sessions.find((s) => s.sessionId === this.currentSessionId);
       if (rec) {
         if (!rec.previewText) rec.previewText = preview;
         rec.model = model;
+        if (provider) rec.provider = provider;
         void this.saveSessions();
       }
     } else {
@@ -141,10 +148,12 @@ export class SessionManager {
     }
   }
 
-  getSessions(): SessionRecord[] {
-    return [...this.sessions].sort((a, b) =>
+  getSessions(provider?: Provider): SessionRecord[] {
+    const sorted = [...this.sessions].sort((a, b) =>
       b.lastMessageAt.localeCompare(a.lastMessageAt)
     );
+    if (!provider) return sorted;
+    return sorted.filter((s) => (s.provider ?? "claude") === provider);
   }
 
   resumeSession(sessionId: string): void {
@@ -152,6 +161,12 @@ export class SessionManager {
     this.isNewSession = true;
     this.pendingPreview = null;
     this.pendingCustomName = null;
+    this.pendingProvider = null;
+  }
+
+  getSessionProvider(sessionId: string): Provider {
+    const rec = this.sessions.find((s) => s.sessionId === sessionId);
+    return rec?.provider ?? "claude";
   }
 
   getMessages(sessionId: string): ChatMessage[] {
@@ -237,6 +252,7 @@ export class SessionManager {
     this.isNewSession = true;
     this.pendingPreview = null;
     this.pendingModel = null;
+    this.pendingProvider = null;
     const data = await this.loadRaw();
     await this.plugin.saveData({
       ...data,

@@ -2,12 +2,18 @@ import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { exec } from "child_process";
 import type ClaudeCodeChatPlugin from "./main";
 import { t } from "./i18n";
-import { AuthService, AuthStatus, extractLoginUrl } from "./AuthService";
+import { AuthService, AuthStatus, CodexAuthService, extractLoginUrl } from "./AuthService";
 
 const MODEL_OPTIONS: Array<[string, string]> = [
   ["claude-sonnet-4-6", "Sonnet 4.6"],
   ["claude-opus-4-6", "Opus 4.6"],
   ["claude-haiku-4-5-20251001", "Haiku 4.5"],
+];
+
+const CODEX_MODEL_OPTIONS: Array<[string, string]> = [
+  ["codex-mini-latest", "Codex mini"],
+  ["o4-mini", "o4-mini"],
+  ["o3", "o3"],
 ];
 
 function checkPath(claudePath: string): Promise<string> {
@@ -58,6 +64,21 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
 
     this.renderSupportBox(containerEl);
     this.renderConnectionSection(containerEl);
+    this.renderCodexConnectionSection(containerEl);
+
+    new Setting(containerEl)
+      .setName(t("settings.defaultProvider"))
+      .setDesc(t("settings.defaultProviderDesc"))
+      .addDropdown((drop) => {
+        drop.addOption("claude", "Claude");
+        drop.addOption("codex", "Codex");
+        drop
+          .setValue(this.plugin.settings.defaultProvider ?? "claude")
+          .onChange(async (value) => {
+            this.plugin.settings.defaultProvider = value as "claude" | "codex";
+            await this.plugin.saveSettings();
+          });
+      });
 
     new Setting(containerEl)
       .setName(t("settings.claudePath"))
@@ -340,6 +361,131 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
             void refresh();
           });
       });
+  }
+
+  private renderCodexConnectionSection(containerEl: HTMLElement): void {
+    const wrap = containerEl.createDiv({ cls: "claude-conn-wrap" });
+
+    new Setting(wrap)
+      .setName(t("auth.codexSection"))
+      .setHeading();
+
+    const statusEl = wrap.createDiv({ cls: "claude-conn-status" });
+    statusEl.setText("…");
+
+    wrap.createDiv({ cls: "claude-conn-note", text: t("auth.codexNote") });
+
+    const refreshBtn = wrap.createDiv({ cls: "claude-conn-btn-row" }).createEl("button", {
+      text: t("auth.refresh"),
+    });
+
+    const renderStatus = (s: { cliInstalled: boolean; cliVersion: string; apiKeyAvailable: boolean } | null) => {
+      statusEl.empty();
+      if (!s) { statusEl.setText("…"); return; }
+      const cliLine = statusEl.createDiv({
+        cls: s.cliInstalled
+          ? "claude-conn-status-line is-success"
+          : "claude-conn-status-line is-error",
+      });
+      cliLine.setText(
+        s.cliInstalled
+          ? "✓ " + t("auth.cliInstalled", s.cliVersion)
+          : "✗ " + t("auth.codexCliMissing")
+      );
+      if (!s.cliInstalled) {
+        statusEl.createDiv({ cls: "claude-conn-hint", text: t("auth.codexCliMissingDesc") });
+      }
+      const keyLine = statusEl.createDiv({
+        cls: s.apiKeyAvailable
+          ? "claude-conn-status-line is-success"
+          : "claude-conn-status-line is-error",
+      });
+      keyLine.setText(
+        s.apiKeyAvailable
+          ? "✓ " + t("auth.codexApiKeySet")
+          : "✗ " + t("auth.codexApiKeyMissing")
+      );
+    };
+
+    const refresh = async () => {
+      renderStatus(null);
+      try {
+        const s = await CodexAuthService.detect(
+          this.plugin.settings.codexPath,
+          this.plugin.settings.openaiApiKey
+        );
+        renderStatus(s);
+      } catch (e) {
+        new Notice((e as Error).message);
+      }
+    };
+
+    refreshBtn.onclick = () => void refresh();
+    void refresh();
+
+    new Setting(wrap)
+      .setName(t("settings.codexPath"))
+      .setDesc(t("settings.codexPathDesc"))
+      .addText((text) =>
+        text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- CLI binary name
+          .setPlaceholder("codex")
+          .setValue(this.plugin.settings.codexPath)
+          .onChange(async (value) => {
+            this.plugin.settings.codexPath = value.trim() || "codex";
+            await this.plugin.saveSettings();
+          })
+      )
+      .addButton((btn) =>
+        btn
+          .setButtonText(t("settings.checkPath"))
+          .onClick(async () => {
+            const result = await checkPath(this.plugin.settings.codexPath);
+            new Notice(result, 6000);
+          })
+      );
+
+    new Setting(wrap)
+      .setName(t("settings.defaultModelCodex"))
+      .setDesc(t("settings.defaultModelCodexDesc"))
+      .addDropdown((drop) => {
+        for (const [id, label] of CODEX_MODEL_OPTIONS) {
+          drop.addOption(id, label);
+        }
+        drop
+          .setValue(this.plugin.settings.defaultModelCodex || "codex-mini-latest")
+          .onChange(async (value) => {
+            this.plugin.settings.defaultModelCodex = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("auth.codexApiKey"))
+      .setDesc(t("auth.codexApiKeyDesc"))
+      .addText((text) => {
+        text.inputEl.type = "password";
+        text
+          .setPlaceholder(t("auth.apiKeyPlaceholder"))
+          .setValue(this.plugin.settings.openaiApiKey)
+          .onChange(async (value) => {
+            this.plugin.settings.openaiApiKey = value.trim();
+            await this.plugin.saveSettings();
+            void refresh();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("auth.codexApiKeyOnly"))
+      .setDesc(t("auth.codexApiKeyOnlyDesc"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.codexApiKeyOnly)
+          .onChange(async (value) => {
+            this.plugin.settings.codexApiKeyOnly = value;
+            await this.plugin.saveSettings();
+          })
+      );
   }
 
   private async startSignIn(refresh: () => Promise<void>): Promise<void> {

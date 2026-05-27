@@ -65,6 +65,11 @@
   border-color: var(--color-accent);
 }
 
+.claude-header-icon-btn.claude-share-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ----- Search dropdown ----- */
 .claude-search-dropdown {
   position: absolute;
@@ -285,7 +290,8 @@
   flex: 1;
 }
 
-.claude-model-btn {
+.claude-model-btn,
+.claude-provider-btn {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -296,6 +302,15 @@
   font-size: 12px;
   color: var(--text-muted);
   border-radius: 4px;
+}
+
+.claude-provider-btn {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.claude-provider-btn-label {
+  font-weight: 600;
 }
 
 .claude-model-btn-label {

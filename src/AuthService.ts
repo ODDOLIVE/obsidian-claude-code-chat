@@ -3,6 +3,7 @@ import { existsSync } from "fs";
 import { delimiter, isAbsolute, join } from "path";
 import { promisify } from "util";
 import { ClaudeRunner } from "./ClaudeRunner";
+import { CodexRunner } from "./CodexRunner";
 
 const execAsync = promisify(exec);
 
@@ -157,4 +158,42 @@ export class AuthService {
 export function extractLoginUrl(text: string): string | null {
   const m = text.match(/https?:\/\/[^\s)]+/);
   return m ? m[0] : null;
+}
+
+export interface CodexAuthStatus {
+  cliInstalled: boolean;
+  cliVersion: string;
+  apiKeyAvailable: boolean;
+}
+
+export class CodexAuthService {
+  static async detect(codexPath: string, apiKey: string): Promise<CodexAuthStatus> {
+    const execPath = await CodexRunner.findCodexPath();
+    const resolvedPath = codexPath && isAbsolute(codexPath) ? codexPath : execPath;
+
+    let cliInstalled = false;
+    let cliVersion = "";
+    if (resolvedPath) {
+      try {
+        const isWin = process.platform === "win32";
+        const extra = isWin ? "" : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
+        const env = { ...process.env, PATH: (process.env.PATH ?? "") + extra };
+        const useShell = isWin && /\.(cmd|bat)$/i.test(resolvedPath);
+        const cmd = useShell
+          ? `"${resolvedPath}" --version`
+          : JSON.stringify(resolvedPath) + " --version";
+        const { stdout } = await promisify(exec)(cmd, { timeout: 8000, env });
+        cliVersion = stdout.trim().split(/\r?\n/)[0] ?? "";
+        cliInstalled = true;
+      } catch {
+        cliInstalled = false;
+      }
+    }
+
+    return {
+      cliInstalled,
+      cliVersion,
+      apiKeyAvailable: !!apiKey.trim(),
+    };
+  }
 }

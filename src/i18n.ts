@@ -198,6 +198,35 @@ const STRINGS = {
       "API token only mode is ON, but no API token is set. Enter a token in Settings → Connection.",
     "error.promptTooLong": (kb: number, limitKb: number) =>
       `Prompt size ${kb} kB exceeds the ${limitKb} kB command-line limit. Try a shorter message or detach some files.`,
+
+    // Codex provider
+    "notice.codexNotFound": (path: string) =>
+      `codex executable not found (${path}). Install via npm i -g @openai/codex and set its path in Settings → Codex path.`,
+    "notice.shareCodexNotSupported":
+      "Share with VS Code is only available for Claude sessions.",
+    "auth.codexSection": "Codex (OpenAI) connection",
+    "auth.codexNote":
+      "Codex CLI (openai/codex) must be installed separately. Authenticate via OPENAI_API_KEY or codex login.",
+    "auth.codexCliMissing": "Codex CLI not found",
+    "auth.codexCliMissingDesc":
+      "Install with: npm install -g @openai/codex",
+    "auth.codexApiKeySet": "OpenAI API key set",
+    "auth.codexApiKeyMissing": "OpenAI API key not set (required unless using codex login)",
+    "auth.codexApiKey": "OpenAI API key",
+    "auth.codexApiKeyDesc":
+      "Used as OPENAI_API_KEY when running Codex CLI. Stored in plain text inside vault data.json — keep your vault private.",
+    "auth.codexApiKeyOnly": "Use API key only (do not use codex login session)",
+    "auth.codexApiKeyOnlyDesc":
+      "When ON, only the OpenAI API key above is used. Disable to allow Codex CLI's own login session.",
+    "settings.codexPath": "Codex CLI path",
+    "settings.codexPathDesc":
+      "Absolute path or 'codex' if on PATH. e.g. /usr/local/bin/codex",
+    "settings.defaultModelCodex": "Default Codex model",
+    "settings.defaultModelCodexDesc": "Default model for Codex conversations",
+    "settings.defaultProvider": "Default provider",
+    "settings.defaultProviderDesc": "Provider to use when opening a new chat panel",
+    "error.codexApiKeyOnlyNoToken":
+      "API key only mode is ON for Codex, but no OpenAI API key is set. Enter a key in Settings → Codex connection.",
   },
   ko: {
     // Header
@@ -394,6 +423,35 @@ const STRINGS = {
       "API 토큰 전용 모드가 켜져 있는데 API 토큰이 설정되어 있지 않습니다. Settings → 연결에서 토큰을 입력하세요.",
     "error.promptTooLong": (kb: number, limitKb: number) =>
       `Prompt 크기 ${kb} kB가 명령행 제한 ${limitKb} kB를 초과합니다. 메시지를 짧게 하거나 일부 첨부를 제거하세요.`,
+
+    // Codex provider
+    "notice.codexNotFound": (path: string) =>
+      `codex 실행 파일을 찾을 수 없습니다 (${path}). npm i -g @openai/codex로 설치하고 Settings → Codex 경로에 지정하세요.`,
+    "notice.shareCodexNotSupported":
+      "VS Code 공유는 Claude 세션에서만 사용할 수 있습니다.",
+    "auth.codexSection": "Codex (OpenAI) 연결",
+    "auth.codexNote":
+      "Codex CLI (openai/codex)는 별도로 설치해야 합니다. OPENAI_API_KEY 또는 codex login으로 인증하세요.",
+    "auth.codexCliMissing": "Codex CLI를 찾을 수 없음",
+    "auth.codexCliMissingDesc":
+      "설치 명령: npm install -g @openai/codex",
+    "auth.codexApiKeySet": "OpenAI API 키 설정됨",
+    "auth.codexApiKeyMissing": "OpenAI API 키 미설정 (codex login 미사용 시 필요)",
+    "auth.codexApiKey": "OpenAI API 키",
+    "auth.codexApiKeyDesc":
+      "Codex CLI 실행 시 OPENAI_API_KEY로 전달됩니다. vault 내 data.json에 평문 저장되므로 vault를 비공개로 유지하세요.",
+    "auth.codexApiKeyOnly": "API 키만 사용 (codex login 세션 무시)",
+    "auth.codexApiKeyOnlyDesc":
+      "켜면 Codex CLI의 로그인 세션을 무시하고 위의 OpenAI API 키만 사용합니다.",
+    "settings.codexPath": "Codex CLI 경로",
+    "settings.codexPathDesc":
+      "절대 경로 또는 PATH에 있으면 'codex'만 입력. 예: /usr/local/bin/codex",
+    "settings.defaultModelCodex": "기본 Codex 모델",
+    "settings.defaultModelCodexDesc": "Codex 대화 시작 시 기본으로 사용할 모델",
+    "settings.defaultProvider": "기본 Provider",
+    "settings.defaultProviderDesc": "채팅 패널을 열 때 사용할 기본 provider",
+    "error.codexApiKeyOnlyNoToken":
+      "Codex API 키 전용 모드가 켜져 있는데 OpenAI API 키가 설정되어 있지 않습니다. Settings → Codex 연결에서 키를 입력하세요.",
   },
 } as const;
 
