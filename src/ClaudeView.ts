@@ -39,6 +39,7 @@ export class ClaudeView extends ItemView {
   private newChatBtnEl!: HTMLButtonElement;
   private historyBtnEl!: HTMLButtonElement;
   private saveBtnEl!: HTMLButtonElement;
+  private shareBtnEl!: HTMLButtonElement;
   private searchDropdownEl: HTMLElement | null = null;
 
   // Messages
@@ -154,6 +155,13 @@ export class ClaudeView extends ItemView {
     });
     setIcon(this.saveBtnEl, "save");
     this.saveBtnEl.onclick = () => this.onManualSave();
+
+    this.shareBtnEl = this.headerEl.createEl("button", {
+      cls: "claude-header-icon-btn",
+      attr: { title: t("header.shareVSCode") },
+    });
+    setIcon(this.shareBtnEl, "share-2");
+    this.shareBtnEl.onclick = () => this.onShareWithVSCode();
   }
 
   private refreshSearchDropdown(): void {
@@ -562,6 +570,7 @@ export class ClaudeView extends ItemView {
       onChunk: (text) => this.appendStreamChunk(text),
       onSessionId: (id) => {
         this.sessionManager.setSessionId(id);
+        this.refreshShareButton();
       },
       onComplete: () => {
         this.finalizeStream();
@@ -623,6 +632,37 @@ export class ClaudeView extends ItemView {
     this.sessionManager.newSession();
     this.clearMessages();
     this.refreshNameInput();
+    this.refreshShareButton();
+  }
+
+  private refreshShareButton(): void {
+    if (this.sessionManager.isCurrentSessionShared()) {
+      this.shareBtnEl.addClass("claude-share-active");
+    } else {
+      this.shareBtnEl.removeClass("claude-share-active");
+    }
+  }
+
+  shareWithVSCode(): void {
+    this.onShareWithVSCode();
+  }
+
+  private onShareWithVSCode(): void {
+    const sessionId = this.sessionManager.getCurrentSessionId();
+    if (!sessionId) {
+      new Notice(t("notice.shareNoSession"));
+      return;
+    }
+    const isShared = !this.sessionManager.isCurrentSessionShared();
+    this.sessionManager.setSharedWithVSCode(isShared);
+    this.refreshShareButton();
+    if (isShared) {
+      const vaultPath =
+        (this.app.vault.adapter as { basePath?: string }).basePath ?? "";
+      const cwd =
+        this.plugin.settings.workingDirectory?.trim() || vaultPath || "(your vault folder)";
+      new VSCodeSyncModal(this.app, sessionId, cwd).open();
+    }
   }
 
   private async onManualSave(): Promise<void> {
@@ -1217,6 +1257,50 @@ class SessionListModal extends Modal {
         }
       };
     }
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+}
+
+class VSCodeSyncModal extends Modal {
+  constructor(app: App, private sessionId: string, private cwd: string) {
+    super(app);
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.addClass("claude-vscode-sync-modal");
+    contentEl.createEl("h2", { text: t("modal.vsCodeShare") });
+    contentEl.createEl("p", { cls: "claude-vscode-sync-desc", text: t("modal.vsCodeShareDesc") });
+
+    // cwd notice: Claude CLI sessions are scoped per working directory.
+    contentEl.createEl("p", {
+      cls: "claude-vscode-sync-cwd-label",
+      text: t("modal.vsCodeShareCwdLabel"),
+    });
+    const cwdWrap = contentEl.createDiv({ cls: "claude-vscode-sync-code-wrap" });
+    cwdWrap.createEl("code", { cls: "claude-vscode-sync-code", text: this.cwd });
+
+    contentEl.createEl("p", {
+      cls: "claude-vscode-sync-cmd-label",
+      text: t("modal.vsCodeShareCmdLabel"),
+    });
+    const cmd = `claude --resume ${this.sessionId}`;
+    const codeWrap = contentEl.createDiv({ cls: "claude-vscode-sync-code-wrap" });
+    codeWrap.createEl("code", { cls: "claude-vscode-sync-code", text: cmd });
+
+    const copyBtn = contentEl.createEl("button", {
+      cls: "mod-cta claude-vscode-sync-copy-btn",
+      text: t("modal.copyCmd"),
+    });
+    copyBtn.onclick = () => {
+      void navigator.clipboard.writeText(cmd).then(() => {
+        copyBtn.setText(t("modal.cmdCopied"));
+        window.setTimeout(() => copyBtn.setText(t("modal.copyCmd")), 2000);
+      });
+    };
   }
 
   onClose(): void {

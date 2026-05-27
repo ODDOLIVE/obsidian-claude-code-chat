@@ -7,6 +7,7 @@ const STRINGS = {
     "header.newChat": "New chat",
     "header.history": "Conversation history",
     "header.save": "Save chat",
+    "header.shareVSCode": "Share with VS Code",
 
     // Input area
     "input.writeMessage": "Write a message...",
@@ -31,6 +32,7 @@ const STRINGS = {
     "notice.saveFailed": (msg: string) => `Save failed: ${msg}`,
     "notice.autoSaveFailed": (msg: string) => `Auto-save failed: ${msg}`,
     "notice.fileLoadFailed": (msg: string) => `File load failed: ${msg}`,
+    "notice.shareNoSession": "Send a message first to get a session ID.",
     "notice.previousRunRunning": "Previous request still running.",
     "notice.claudeNotFound": (path: string) =>
       `claude executable not found (${path}). Set an absolute path in Settings → claudePath.`,
@@ -66,6 +68,13 @@ const STRINGS = {
     "modal.noContent": "(No content)",
     "modal.delete": "Delete",
     "modal.confirmDelete": "Click again to confirm delete",
+    "modal.vsCodeShare": "Open in VS Code",
+    "modal.vsCodeShareDesc": "Run this command in VS Code terminal to continue this conversation. Once done, new messages from both sides share the same session automatically.",
+    "modal.vsCodeShareCwdLabel":
+      "1. Open the terminal in this working directory (Claude Code sessions are scoped per folder):",
+    "modal.vsCodeShareCmdLabel": "2. Then run this command:",
+    "modal.copyCmd": "Copy command",
+    "modal.cmdCopied": "Copied!",
 
     // Settings
     "settings.support":
@@ -117,6 +126,7 @@ const STRINGS = {
     "cmd.openChat": "Open Claude Code Chat",
     "cmd.newChat": "Claude Chat: New chat",
     "cmd.saveChat": "Claude Chat: Save conversation",
+    "cmd.shareVSCode": "Claude Chat: Share with VS Code",
 
     // Vault context
     "vault.contextHeader": (name: string) => `# ${name} — Vault Context`,
@@ -195,6 +205,7 @@ const STRINGS = {
     "header.newChat": "새 대화",
     "header.history": "대화 기록",
     "header.save": "대화 저장",
+    "header.shareVSCode": "VS Code와 공유",
 
     // Input area
     "input.writeMessage": "메시지를 입력하세요...",
@@ -219,6 +230,7 @@ const STRINGS = {
     "notice.saveFailed": (msg: string) => `저장 실패: ${msg}`,
     "notice.autoSaveFailed": (msg: string) => `자동 저장 실패: ${msg}`,
     "notice.fileLoadFailed": (msg: string) => `파일 로드 실패: ${msg}`,
+    "notice.shareNoSession": "세션 ID를 얻으려면 먼저 메시지를 보내세요.",
     "notice.previousRunRunning": "이전 요청이 아직 실행 중입니다.",
     "notice.claudeNotFound": (path: string) =>
       `claude 실행 파일을 찾을 수 없습니다 (${path}). Settings에서 claudePath에 절대경로를 지정하세요.`,
@@ -254,6 +266,13 @@ const STRINGS = {
     "modal.noContent": "(내용 없음)",
     "modal.delete": "삭제",
     "modal.confirmDelete": "한 번 더 누르면 삭제됩니다",
+    "modal.vsCodeShare": "VS Code에서 열기",
+    "modal.vsCodeShareDesc": "VS Code 터미널에서 아래 명령어를 실행하면 이 대화를 이어서 할 수 있습니다. 이후 양쪽에서 보내는 메시지는 같은 세션으로 자동 공유됩니다.",
+    "modal.vsCodeShareCwdLabel":
+      "1. 아래 작업 폴더에서 터미널을 여세요 (Claude Code 세션은 폴더별로 분리됩니다):",
+    "modal.vsCodeShareCmdLabel": "2. 그런 다음 이 명령어를 실행:",
+    "modal.copyCmd": "명령어 복사",
+    "modal.cmdCopied": "복사됨!",
 
     // Settings
     "settings.support":
@@ -304,6 +323,7 @@ const STRINGS = {
     "cmd.openChat": "Claude Code Chat 열기",
     "cmd.newChat": "Claude Chat: 새 대화 시작",
     "cmd.saveChat": "Claude Chat: 대화 저장",
+    "cmd.shareVSCode": "Claude Chat: VS Code와 공유",
 
     // Vault context
     "vault.contextHeader": (name: string) => `# ${name} — Vault 컨텍스트`,
