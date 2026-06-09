@@ -170,7 +170,8 @@ export class SessionManager {
       if (rec) {
         if (!rec.previewText) rec.previewText = preview;
         rec.model = model;
-        if (provider) rec.provider = provider;
+        // 9-B: Don't update rec.provider here — it tracks the provider that created nativeSessionId,
+        // not the current UI selection. Updating it breaks getResumeMode() logic.
         void this.saveSessions();
       }
     } else {
@@ -282,8 +283,9 @@ export class SessionManager {
       // Find the session record that either has this key as conversationId or old sessionId
       const rec = this.sessions.find((s) => {
         if (s.conversationId === key) return true;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (s as unknown as any).sessionId === key;
+        // Check for old sessionId field (migration)
+        const sRaw = s as unknown as Record<string, unknown>;
+        return sRaw.sessionId === key;
       });
       if (rec) {
         migratedHistories[rec.conversationId] = messages;
