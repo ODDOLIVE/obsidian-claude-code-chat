@@ -158,6 +158,24 @@ const STRINGS = {
 
     "file.conversationHeader": "## Conversation",
 
+    // Permissions (9-A)
+    "settings.permissions": "Permissions",
+    "settings.permissionMode": "Permission mode",
+    "settings.permissionModeDesc":
+      "Control how Claude Code handles tool permissions. 'default' (recommended): each tool prompts the user. 'plan': show what tools will be used before running. 'acceptEdits': auto-allow Edit without prompting. 'bypassPermissions': auto-allow all tools (⚠️ dangerous, allows destructive operations).",
+    "permMode.default": "Default (prompt each tool)",
+    "permMode.plan": "Plan (show tools first)",
+    "permMode.acceptEdits": "Accept edits (auto-allow Edit)",
+    "permMode.bypass": "Bypass all (auto-allow all tools)",
+    "settings.allowedTools": "Auto-allowed tools",
+    "settings.allowedToolsDesc":
+      "List of tools to auto-allow without prompting. One per line or comma-separated. Example: 'Read, Edit, Bash(git status)'",
+    "settings.disallowedTools": "Auto-blocked tools",
+    "settings.disallowedToolsDesc":
+      "List of tools to always block. Syntax same as 'Auto-allowed tools'. Blocks take priority over allow-list.",
+    "settings.bypassWarning":
+      "⚠️ 'Bypass all' auto-allows all tools including destructive ones (rm, git push, etc.). Use only if you fully trust Claude.",
+
     // Auth / Connection
     "auth.section": "Connection",
     "auth.statusTitle": "Status",
@@ -514,6 +532,24 @@ const STRINGS = {
     "settings.defaultModelGeminiDesc": "Gemini 대화 시작 시 기본으로 사용할 모델",
     "error.geminiApiKeyOnlyNoToken":
       "Gemini API 키 전용 모드가 켜져 있는데 Gemini API 키가 설정되어 있지 않습니다. Settings → Gemini 연결에서 키를 입력하세요.",
+
+    // Permissions (9-A)
+    "settings.permissions": "권한(Permissions)",
+    "settings.permissionMode": "권한 모드",
+    "settings.permissionModeDesc":
+      "Claude Code가 도구 권한을 다루는 방식 조정. 'default'(권장): 각 도구 실행 시 매번 확인. 'plan': 실행 전 사용될 도구 목록 표시. 'acceptEdits': Edit 도구 자동허용. 'bypassPermissions': 모든 도구 자동허용(⚠️ 위험, 삭제 등 파괴 명령 포함).",
+    "permMode.default": "기본값 (도구마다 확인)",
+    "permMode.plan": "계획 표시 (도구 목록 먼저 보기)",
+    "permMode.acceptEdits": "편집 허용 (Edit 자동허용)",
+    "permMode.bypass": "모두 허용 (모든 도구 자동허용)",
+    "settings.allowedTools": "자동허용 도구",
+    "settings.allowedToolsDesc":
+      "확인 없이 자동 실행할 도구 목록. 한 줄에 하나씩 또는 쉼표로 구분. 예: 'Read, Edit, Bash(git status)'",
+    "settings.disallowedTools": "자동차단 도구",
+    "settings.disallowedToolsDesc":
+      "항상 차단할 도구 목록. 문법은 '자동허용 도구'와 동일. 차단 목록이 허용 목록보다 우선.",
+    "settings.bypassWarning":
+      "⚠️ '모두 허용' 모드는 rm, git push 등 파괴 명령을 포함한 모든 도구를 자동허용합니다. Claude를 완전히 신뢰할 때만 사용하세요.",
   },
 } as const;
 

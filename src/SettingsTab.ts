@@ -73,6 +73,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
     this.renderConnectionSection(containerEl);
     this.renderCodexConnectionSection(containerEl);
     this.renderGeminiConnectionSection(containerEl);
+    this.renderPermissionsSection(containerEl);
 
     new Setting(containerEl)
       .setName(t("settings.defaultProvider"))
@@ -622,6 +623,68 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+  }
+
+  private renderPermissionsSection(containerEl: HTMLElement): void {
+    const wrap = containerEl.createDiv({ cls: "claude-conn-wrap" });
+
+    new Setting(wrap)
+      .setName(t("settings.permissions"))
+      .setHeading();
+
+    new Setting(wrap)
+      .setName(t("settings.permissionMode"))
+      .setDesc(t("settings.permissionModeDesc"))
+      .addDropdown((drop) => {
+        drop.addOption("default", t("permMode.default"));
+        drop.addOption("plan", t("permMode.plan"));
+        drop.addOption("acceptEdits", t("permMode.acceptEdits"));
+        drop.addOption("bypassPermissions", t("permMode.bypass"));
+        drop
+          .setValue(this.plugin.settings.permissionMode ?? "default")
+          .onChange(async (value) => {
+            this.plugin.settings.permissionMode = value as
+              | "default"
+              | "plan"
+              | "acceptEdits"
+              | "bypassPermissions";
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("settings.allowedTools"))
+      .setDesc(t("settings.allowedToolsDesc"))
+      .addTextArea((textarea) => {
+        textarea.inputEl.addClass("claude-perm-textarea");
+        textarea
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- example syntax
+          .setPlaceholder("Read\nEdit\nBash(git status)")
+          .setValue(this.plugin.settings.allowedTools)
+          .onChange(async (value) => {
+            this.plugin.settings.allowedTools = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("settings.disallowedTools"))
+      .setDesc(t("settings.disallowedToolsDesc"))
+      .addTextArea((textarea) => {
+        textarea.inputEl.addClass("claude-perm-textarea");
+        textarea
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- example syntax
+          .setPlaceholder("Bash(rm *)\nBash(git push *)")
+          .setValue(this.plugin.settings.disallowedTools)
+          .onChange(async (value) => {
+            this.plugin.settings.disallowedTools = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    const bypassNote = wrap.createDiv();
+    bypassNote.addClass("claude-conn-note");
+    bypassNote.setText(t("settings.bypassWarning"));
   }
 
   private async startSignIn(refresh: () => Promise<void>): Promise<void> {

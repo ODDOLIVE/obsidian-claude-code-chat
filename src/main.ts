@@ -29,6 +29,10 @@ export const DEFAULT_SETTINGS: ClaudeCodeSettings = {
   geminiApiKey: "",
   geminiApiKeyOnly: false,
   defaultModelGemini: "",
+  // Permissions (9-A)
+  permissionMode: "default",
+  allowedTools: "",
+  disallowedTools: "",
 };
 
 export default class ClaudeCodeChatPlugin extends Plugin {

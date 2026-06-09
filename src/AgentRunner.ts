@@ -13,6 +13,10 @@ export interface RunOptions {
   provider: Provider;
   /** Previous messages for providers that manage continuity via prompt injection (e.g. Gemini). */
   history?: ReadonlyArray<{ role: string; content: string }>;
+  // Permissions (9-A)
+  permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions";
+  allowedTools?: string[];
+  disallowedTools?: string[];
 }
 
 export interface RunCallbacks {

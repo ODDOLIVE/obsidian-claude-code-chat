@@ -27,6 +27,10 @@ export interface ClaudeCodeSettings {
   geminiApiKey: string;
   geminiApiKeyOnly: boolean;
   defaultModelGemini: string;
+  // Permissions (9-A)
+  permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions";
+  allowedTools: string;
+  disallowedTools: string;
 }
 
 // File extensions whose contents are inlined into the prompt as text.

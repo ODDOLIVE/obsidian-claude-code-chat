@@ -672,3 +672,12 @@
   display: block;
   width: 100%;
 }
+
+/* ----- Permissions (9-A) ----- */
+.claude-perm-textarea {
+  width: 100%;
+  min-height: 64px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  resize: vertical;
+}

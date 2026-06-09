@@ -48,6 +48,11 @@ function modelLabel(id: string, provider: Provider): string {
   return list.find((m) => m.id === id)?.label ?? id;
 }
 
+// Parse comma/newline-separated tool list into array (9-A)
+function parseToolList(raw: string): string[] {
+  return raw.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+}
+
 export class ClaudeView extends ItemView {
   // Header
   private headerEl!: HTMLDivElement;
@@ -638,6 +643,10 @@ export class ClaudeView extends ItemView {
       useApiKey,
       provider,
       history: geminiHistory,
+      // Permissions (9-A)
+      permissionMode: this.plugin.settings.permissionMode,
+      allowedTools: parseToolList(this.plugin.settings.allowedTools),
+      disallowedTools: parseToolList(this.plugin.settings.disallowedTools),
     };
 
     void this.runner.run(options, {

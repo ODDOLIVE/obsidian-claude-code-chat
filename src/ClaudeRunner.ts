@@ -75,6 +75,23 @@ export class ClaudeRunner implements AgentRunner {
       options.model,
     ];
 
+    // Permissions (9-A): add permission flags if specified
+    if (options.permissionMode === "bypassPermissions") {
+      args.push("--dangerously-skip-permissions");
+    } else if (options.permissionMode && options.permissionMode !== "default") {
+      args.push("--permission-mode", options.permissionMode);
+    }
+    if (options.allowedTools?.length) {
+      for (const tool of options.allowedTools) {
+        args.push("--allowedTools", tool);
+      }
+    }
+    if (options.disallowedTools?.length) {
+      for (const tool of options.disallowedTools) {
+        args.push("--disallowedTools", tool);
+      }
+    }
+
     // Always use --resume <id> when we have a session ID — avoids picking up
     // a VS Code session via --continue when both are running against the same cwd.
     if (options.sessionId && (options.sessionFlag === "--continue" || options.sessionFlag === "--resume")) {
