@@ -182,7 +182,7 @@ const STRINGS = {
       "⚠️ 'Bypass all' auto-allows all tools including destructive ones (rm, git push, etc.). Use only if you fully trust Claude.",
 
     // Auth / Connection
-    "auth.section": "Connection",
+    "auth.section": "Claude (Anthropic) Connection",
     "auth.statusTitle": "Status",
     "auth.refresh": "Refresh",
     "auth.cliInstalled": (v: string) => `CLI installed${v ? ` (${v})` : ""}`,

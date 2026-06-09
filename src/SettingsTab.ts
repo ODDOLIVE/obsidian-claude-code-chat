@@ -70,7 +70,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     this.renderSupportBox(containerEl);
-    this.renderConnectionSection(containerEl);
+    this.renderClaudeConnectionSection(containerEl);
     this.renderCodexConnectionSection(containerEl);
     this.renderGeminiConnectionSection(containerEl);
     this.renderPermissionsSection(containerEl);
@@ -89,56 +89,6 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
       });
-
-    new Setting(containerEl)
-      .setName(t("settings.claudePath"))
-      .setDesc(t("settings.claudePathDesc"))
-      .addText((text) =>
-        text
-          // eslint-disable-next-line obsidianmd/ui/sentence-case -- CLI binary name
-          .setPlaceholder("claude")
-          .setValue(this.plugin.settings.claudePath)
-          .onChange(async (value) => {
-            this.plugin.settings.claudePath = value.trim() || "claude";
-            await this.plugin.saveSettings();
-          })
-      )
-      .addButton((btn) =>
-        btn
-          .setButtonText(t("settings.checkPath"))
-          .onClick(async () => {
-            const result = await checkPath(this.plugin.settings.claudePath);
-            new Notice(result, 6000);
-          })
-      );
-
-    new Setting(containerEl)
-      .setName(t("settings.defaultModel"))
-      .setDesc(t("settings.defaultModelDesc"))
-      .addDropdown((drop) => {
-        for (const [id, label] of MODEL_OPTIONS) {
-          drop.addOption(id, label);
-        }
-        drop
-          .setValue(this.plugin.settings.defaultModel)
-          .onChange(async (value) => {
-            this.plugin.settings.defaultModel = value;
-            await this.plugin.saveSettings();
-          });
-      });
-
-    new Setting(containerEl)
-      .setName(t("settings.workingDirectory"))
-      .setDesc(t("settings.workingDirectoryDesc"))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("settings.workingDirectoryPlaceholder"))
-          .setValue(this.plugin.settings.workingDirectory)
-          .onChange(async (value) => {
-            this.plugin.settings.workingDirectory = value.trim();
-            await this.plugin.saveSettings();
-          })
-      );
 
     new Setting(containerEl)
       .setName(t("settings.titleSync"))
@@ -235,7 +185,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
     });
   }
 
-  private renderConnectionSection(containerEl: HTMLElement): void {
+  private renderClaudeConnectionSection(containerEl: HTMLElement): void {
     const wrap = containerEl.createDiv({ cls: "claude-conn-wrap" });
 
     new Setting(wrap)
@@ -371,6 +321,59 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
             void refresh();
           });
       });
+
+    // Claude CLI path (moved from general settings)
+    new Setting(wrap)
+      .setName(t("settings.claudePath"))
+      .setDesc(t("settings.claudePathDesc"))
+      .addText((text) =>
+        text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- CLI binary name
+          .setPlaceholder("claude")
+          .setValue(this.plugin.settings.claudePath)
+          .onChange(async (value) => {
+            this.plugin.settings.claudePath = value.trim() || "claude";
+            await this.plugin.saveSettings();
+          })
+      )
+      .addButton((btn) =>
+        btn
+          .setButtonText(t("settings.checkPath"))
+          .onClick(async () => {
+            const result = await checkPath(this.plugin.settings.claudePath);
+            new Notice(result, 6000);
+          })
+      );
+
+    // Default Claude model (moved from general settings)
+    new Setting(wrap)
+      .setName(t("settings.defaultModel"))
+      .setDesc(t("settings.defaultModelDesc"))
+      .addDropdown((drop) => {
+        for (const [id, label] of MODEL_OPTIONS) {
+          drop.addOption(id, label);
+        }
+        drop
+          .setValue(this.plugin.settings.defaultModel)
+          .onChange(async (value) => {
+            this.plugin.settings.defaultModel = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    // Claude working directory (moved from general settings)
+    new Setting(wrap)
+      .setName(t("settings.workingDirectory"))
+      .setDesc(t("settings.workingDirectoryDesc"))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("settings.workingDirectoryPlaceholder"))
+          .setValue(this.plugin.settings.workingDirectory)
+          .onChange(async (value) => {
+            this.plugin.settings.workingDirectory = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
   }
 
   private renderCodexConnectionSection(containerEl: HTMLElement): void {
