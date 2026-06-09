@@ -45,6 +45,11 @@ const STRINGS = {
       "↩️ Resuming previous conversation. (No saved messages)",
     "session.cancelled": "_(Cancelled)_",
     "session.errorPrefix": "An error occurred.",
+    // 9-C: Provider handoff
+    "session.providerSwitched": (provider: string) =>
+      `Switching to ${provider}. Previous conversation context will be injected for continuity.`,
+    "session.replayNote":
+      "ℹ️ Multi-provider: Context from previous messages will be included. Response may differ slightly due to model differences.",
 
     // Slash command popup
     "slash.placeholder": "Select command... (model/session/save)",
@@ -321,6 +326,11 @@ const STRINGS = {
       "↩️ 이전 대화를 재개합니다. (저장된 메시지 없음)",
     "session.cancelled": "_(중단됨)_",
     "session.errorPrefix": "오류가 발생했습니다.",
+    // 9-C: Provider handoff
+    "session.providerSwitched": (provider: string) =>
+      `${provider}로 전환합니다. 이전 대화 맥락이 주입되어 연속성이 유지됩니다.`,
+    "session.replayNote":
+      "ℹ️ 멀티 provider: 이전 메시지의 맥락이 포함됩니다. AI 모델 차이로 인해 답변이 약간 달라질 수 있습니다.",
 
     // Slash command popup
     "slash.placeholder": "명령 선택... (모델/세션/저장)",
