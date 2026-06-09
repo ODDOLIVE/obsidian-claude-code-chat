@@ -11,6 +11,8 @@ export interface RunOptions {
   apiKey?: string;
   useApiKey?: boolean;
   provider: Provider;
+  /** Previous messages for providers that manage continuity via prompt injection (e.g. Gemini). */
+  history?: ReadonlyArray<{ role: string; content: string }>;
 }
 
 export interface RunCallbacks {

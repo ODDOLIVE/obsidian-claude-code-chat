@@ -23,7 +23,12 @@ export const DEFAULT_SETTINGS: ClaudeCodeSettings = {
   defaultProvider: "claude",
   openaiApiKey: "",
   codexApiKeyOnly: false,
-  defaultModelCodex: "codex-mini-latest",
+  defaultModelCodex: "",
+  // Gemini provider defaults
+  geminiPath: "gemini",
+  geminiApiKey: "",
+  geminiApiKeyOnly: false,
+  defaultModelGemini: "",
 };
 
 export default class ClaudeCodeChatPlugin extends Plugin {

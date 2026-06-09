@@ -1,4 +1,4 @@
-export type Provider = "claude" | "codex";
+export type Provider = "claude" | "codex" | "gemini";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -22,6 +22,11 @@ export interface ClaudeCodeSettings {
   openaiApiKey: string;
   codexApiKeyOnly: boolean;
   defaultModelCodex: string;
+  // Gemini provider
+  geminiPath: string;
+  geminiApiKey: string;
+  geminiApiKeyOnly: boolean;
+  defaultModelGemini: string;
 }
 
 // File extensions whose contents are inlined into the prompt as text.

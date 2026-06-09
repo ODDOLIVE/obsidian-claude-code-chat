@@ -2,7 +2,7 @@ import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { exec } from "child_process";
 import type ClaudeCodeChatPlugin from "./main";
 import { t } from "./i18n";
-import { AuthService, AuthStatus, CodexAuthService, extractLoginUrl } from "./AuthService";
+import { AuthService, AuthStatus, CodexAuthService, GeminiAuthService, GeminiAuthStatus, extractLoginUrl } from "./AuthService";
 
 const MODEL_OPTIONS: Array<[string, string]> = [
   ["claude-sonnet-4-6", "Sonnet 4.6"],
@@ -11,9 +11,16 @@ const MODEL_OPTIONS: Array<[string, string]> = [
 ];
 
 const CODEX_MODEL_OPTIONS: Array<[string, string]> = [
-  ["codex-mini-latest", "Codex mini"],
+  ["", "Default (auto)"],
   ["o4-mini", "o4-mini"],
   ["o3", "o3"],
+];
+
+const GEMINI_MODEL_OPTIONS: Array<[string, string]> = [
+  ["", "Default (auto)"],
+  ["gemini-2.5-pro", "Gemini 2.5 Pro"],
+  ["gemini-2.5-flash", "Gemini 2.5 Flash"],
+  ["gemini-2.0-flash", "Gemini 2.0 Flash"],
 ];
 
 function checkPath(claudePath: string): Promise<string> {
@@ -65,6 +72,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
     this.renderSupportBox(containerEl);
     this.renderConnectionSection(containerEl);
     this.renderCodexConnectionSection(containerEl);
+    this.renderGeminiConnectionSection(containerEl);
 
     new Setting(containerEl)
       .setName(t("settings.defaultProvider"))
@@ -72,10 +80,11 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
       .addDropdown((drop) => {
         drop.addOption("claude", "Claude");
         drop.addOption("codex", "Codex");
+        drop.addOption("gemini", "Gemini");
         drop
           .setValue(this.plugin.settings.defaultProvider ?? "claude")
           .onChange(async (value) => {
-            this.plugin.settings.defaultProvider = value as "claude" | "codex";
+            this.plugin.settings.defaultProvider = value as "claude" | "codex" | "gemini";
             await this.plugin.saveSettings();
           });
       });
@@ -456,7 +465,7 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
           drop.addOption(id, label);
         }
         drop
-          .setValue(this.plugin.settings.defaultModelCodex || "codex-mini-latest")
+          .setValue(this.plugin.settings.defaultModelCodex ?? "")
           .onChange(async (value) => {
             this.plugin.settings.defaultModelCodex = value;
             await this.plugin.saveSettings();
@@ -486,6 +495,130 @@ export class ClaudeCodeSettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.codexApiKeyOnly)
           .onChange(async (value) => {
             this.plugin.settings.codexApiKeyOnly = value;
+            await this.plugin.saveSettings();
+          })
+      );
+  }
+
+  private renderGeminiConnectionSection(containerEl: HTMLElement): void {
+    const wrap = containerEl.createDiv({ cls: "claude-conn-wrap" });
+
+    new Setting(wrap)
+      .setName(t("auth.geminiSection"))
+      .setHeading();
+
+    const statusEl = wrap.createDiv({ cls: "claude-conn-status" });
+    statusEl.setText("…");
+
+    wrap.createDiv({ cls: "claude-conn-note", text: t("auth.geminiNote") });
+
+    const refreshBtn = wrap.createDiv({ cls: "claude-conn-btn-row" }).createEl("button", {
+      text: t("auth.refresh"),
+    });
+
+    const renderStatus = (s: GeminiAuthStatus | null) => {
+      statusEl.empty();
+      if (!s) { statusEl.setText("…"); return; }
+      const cliLine = statusEl.createDiv({
+        cls: s.cliInstalled
+          ? "claude-conn-status-line is-success"
+          : "claude-conn-status-line is-error",
+      });
+      cliLine.setText(
+        s.cliInstalled
+          ? "✓ " + t("auth.cliInstalled", s.cliVersion)
+          : "✗ " + t("auth.geminiCliMissing")
+      );
+      if (!s.cliInstalled) {
+        statusEl.createDiv({ cls: "claude-conn-hint", text: t("auth.geminiCliMissingDesc") });
+        return;
+      }
+      if (s.apiKeyAvailable) {
+        const keyLine = statusEl.createDiv({ cls: "claude-conn-status-line is-success" });
+        keyLine.setText("✓ " + t("auth.geminiApiKeySet"));
+      } else {
+        const oauthLine = statusEl.createDiv({ cls: "claude-conn-status-line" });
+        oauthLine.setText("ℹ " + t("auth.geminiOAuthHint"));
+      }
+    };
+
+    const refresh = async () => {
+      renderStatus(null);
+      try {
+        const s = await GeminiAuthService.detect(
+          this.plugin.settings.geminiPath,
+          this.plugin.settings.geminiApiKey
+        );
+        renderStatus(s);
+      } catch (e) {
+        new Notice((e as Error).message);
+      }
+    };
+
+    refreshBtn.onclick = () => void refresh();
+    void refresh();
+
+    new Setting(wrap)
+      .setName(t("settings.geminiPath"))
+      .setDesc(t("settings.geminiPathDesc"))
+      .addText((text) =>
+        text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- CLI binary name
+          .setPlaceholder("gemini")
+          .setValue(this.plugin.settings.geminiPath)
+          .onChange(async (value) => {
+            this.plugin.settings.geminiPath = value.trim() || "gemini";
+            await this.plugin.saveSettings();
+          })
+      )
+      .addButton((btn) =>
+        btn
+          .setButtonText(t("settings.checkPath"))
+          .onClick(async () => {
+            const result = await checkPath(this.plugin.settings.geminiPath);
+            new Notice(result, 6000);
+          })
+      );
+
+    new Setting(wrap)
+      .setName(t("settings.defaultModelGemini"))
+      .setDesc(t("settings.defaultModelGeminiDesc"))
+      .addDropdown((drop) => {
+        for (const [id, label] of GEMINI_MODEL_OPTIONS) {
+          drop.addOption(id, label);
+        }
+        drop
+          .setValue(this.plugin.settings.defaultModelGemini ?? "")
+          .onChange(async (value) => {
+            this.plugin.settings.defaultModelGemini = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("auth.geminiApiKey"))
+      .setDesc(t("auth.geminiApiKeyDesc"))
+      .addText((text) => {
+        text.inputEl.type = "password";
+        text
+          // eslint-disable-next-line obsidianmd/ui/sentence-case -- API key prefix
+          .setPlaceholder("AIza...")
+          .setValue(this.plugin.settings.geminiApiKey)
+          .onChange(async (value) => {
+            this.plugin.settings.geminiApiKey = value.trim();
+            await this.plugin.saveSettings();
+            void refresh();
+          });
+      });
+
+    new Setting(wrap)
+      .setName(t("auth.geminiApiKeyOnly"))
+      .setDesc(t("auth.geminiApiKeyOnlyDesc"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.geminiApiKeyOnly)
+          .onChange(async (value) => {
+            this.plugin.settings.geminiApiKeyOnly = value;
             await this.plugin.saveSettings();
           })
       );

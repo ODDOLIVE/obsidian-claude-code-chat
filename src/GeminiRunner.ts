@@ -9,25 +9,28 @@ import type { AgentRunner, RunOptions, RunCallbacks } from "./AgentRunner";
 const MAX_PROMPT_BYTES = 28_000;
 const execAsync = promisify(exec);
 
-// Actual JSONL event shapes from `codex exec - --json` (v0.134.0, ChatGPT account).
-// Verified by running:
-//   echo "hello" | codex exec - --json --skip-git-repo-check
-// Output:
-//   {"type":"thread.started","thread_id":"<uuid>"}
-//   {"type":"turn.started"}
-//   {"type":"item.completed","item":{"id":"...","type":"agent_message","text":"..."}}
-//   {"type":"turn.completed","usage":{...}}
-// Error format (stdout JSONL):
-//   {"type":"error","status":400,"error":{"type":"...","message":"..."}}
-type CodexEvent =
-  | { type: "thread.started"; thread_id?: string }
-  | { type: "turn.started" }
-  | { type: "item.completed"; item?: { type?: string; text?: string } }
-  | { type: "turn.completed" }
-  | { type: "error"; status?: number; error?: { message?: string }; message?: string }
+// Gemini CLI stream-json events (v0.43.0, verified from source code).
+// Event flow: init → message(delta:true)* → result{status:"success"}
+//
+// Session strategy: Gemini CLI's --resume relies on scanning JSONL files on disk,
+// which causes EMFILE errors when many sessions exist and still fails to find
+// sessions created via stream-json mode. Instead, we maintain conversation
+// continuity by injecting prior messages directly into each prompt (history
+// injection). The session ID we track is sourced from the init event and is
+// used for plugin-side UI only (session list, auto-save), not for --resume.
+//
+// Prompt: written to stdin; "-p ." triggers headless mode (CLI appends "." to
+// stdin content). A plain space fails through the Windows .cmd wrapper.
+type GeminiEvent =
+  | { type: "init"; session_id?: string; model?: string }
+  | { type: "message"; role?: string; content?: string; delta?: boolean }
+  | { type: "tool_use"; [key: string]: unknown }
+  | { type: "tool_result"; [key: string]: unknown }
+  | { type: "error"; severity?: string; message?: string }
+  | { type: "result"; status?: string; error?: { message?: string } }
   | { type: string; [key: string]: unknown };
 
-export class CodexRunner implements AgentRunner {
+export class GeminiRunner implements AgentRunner {
   private proc: ChildProcess | null = null;
   private resolvedPath: string | null = null;
 
@@ -37,8 +40,24 @@ export class CodexRunner implements AgentRunner {
       return;
     }
 
-    // Inline attached file contents into the prompt (same approach as ClaudeRunner).
-    let fullPrompt = options.prompt;
+    // Build prompt: inject history for conversational continuity, then add current prompt.
+    let historyItems = [...(options.history ?? [])];
+    const buildWithHistory = (items: typeof historyItems) => {
+      if (items.length === 0) return options.prompt;
+      const lines = items
+        .map((m) => `${m.role === "user" ? "User" : "Gemini"}: ${m.content}`)
+        .join("\n\n");
+      return `Previous conversation:\n${lines}\n\nCurrent message:\n${options.prompt}`;
+    };
+
+    // Trim oldest user+assistant pairs from history if the prompt would be too large.
+    let fullPrompt = buildWithHistory(historyItems);
+    while (historyItems.length >= 2 && Buffer.byteLength(fullPrompt, "utf-8") > MAX_PROMPT_BYTES) {
+      historyItems = historyItems.slice(2);
+      fullPrompt = buildWithHistory(historyItems);
+    }
+
+    // Inline attached file contents.
     for (const filePath of options.attachedFilePaths ?? []) {
       const ext = (filePath.split(".").pop() ?? "").toLowerCase();
       const header = `\n\n---\n${t("attach.attached", filePath)}\n`;
@@ -70,9 +89,9 @@ export class CodexRunner implements AgentRunner {
     }
 
     let execPath = options.execPath;
-    if (!isAbsolute(execPath) || execPath === "codex") {
+    if (!isAbsolute(execPath) || execPath === "gemini") {
       if (!this.resolvedPath) {
-        this.resolvedPath = await CodexRunner.findCodexPath();
+        this.resolvedPath = await GeminiRunner.findGeminiPath();
       }
       if (this.resolvedPath) execPath = this.resolvedPath;
     }
@@ -82,34 +101,25 @@ export class CodexRunner implements AgentRunner {
       ? ""
       : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
 
-    // Prompt is written to stdin via "-" to avoid shell quoting/splitting on
-    // Windows where .cmd wrappers pass args through cmd.exe unquoted.
-    const args: string[] = ["exec"];
-
-    // Both "--resume" (history restore) and "--continue" (next turn in same chat)
-    // map to `codex exec resume <thread_id>` — Codex has no "--continue" equivalent.
-    if (options.sessionId && (options.sessionFlag === "--resume" || options.sessionFlag === "--continue")) {
-      args.push("resume", options.sessionId);
-    }
-
-    args.push("-");          // read prompt from stdin
-    args.push("--json");
-    // Only pass -m when a non-empty model is specified.
-    // ChatGPT account users must rely on the CLI default (no -m flag).
+    // No --resume: session continuity is handled via history injection above.
+    const args: string[] = [
+      "-p", ".",   // "." triggers headless mode; actual prompt is written to stdin
+      "-o", "stream-json",
+      "--yolo",
+      "--skip-trust",
+    ];
     if (options.model) {
       args.push("-m", options.model);
     }
-    args.push("--skip-git-repo-check");
 
     const env: Record<string, string | undefined> = {
       ...process.env,
       PATH: (process.env.PATH ?? "") + extraPath,
-      // Remove ELECTRON_RUN_AS_NODE to avoid Electron hijacking the subprocess
       ELECTRON_RUN_AS_NODE: undefined,
     };
 
     if (options.useApiKey && options.apiKey) {
-      env.OPENAI_API_KEY = options.apiKey;
+      env.GEMINI_API_KEY = options.apiKey;
     }
 
     const useShell = isWin && /\.(cmd|bat)$/i.test(execPath);
@@ -127,7 +137,6 @@ export class CodexRunner implements AgentRunner {
       return;
     }
 
-    // Write prompt to stdin and close so the CLI starts processing.
     proc.stdin?.write(fullPrompt, "utf-8");
     proc.stdin?.end();
 
@@ -160,7 +169,7 @@ export class CodexRunner implements AgentRunner {
       this.proc = null;
       const e = err as Error & { code?: string };
       if (e.code === "ENOENT") {
-        callbacks.onError(t("notice.codexNotFound", execPath));
+        callbacks.onError(t("notice.geminiNotFound", execPath));
       } else {
         callbacks.onError(t("notice.processError", err.message));
       }
@@ -168,7 +177,6 @@ export class CodexRunner implements AgentRunner {
 
     proc.on("close", (code) => {
       this.proc = null;
-      // Flush any remaining buffered line
       if (stdoutBuffer.trim()) {
         if (this.handleLine(stdoutBuffer.trim(), callbacks)) {
           turnCompleted = true;
@@ -176,12 +184,10 @@ export class CodexRunner implements AgentRunner {
         stdoutBuffer = "";
       }
       if (code === 0) {
-        // onComplete may have been called already from turn.completed event.
-        // finalizeStream() is guarded against double-calls so this is safe.
         if (!turnCompleted) callbacks.onComplete();
       } else {
         callbacks.onError(
-          stderrAccum.trim() || `codex exited with code ${code}`
+          stderrAccum.trim() || `gemini exited with code ${code}`
         );
       }
     });
@@ -198,44 +204,54 @@ export class CodexRunner implements AgentRunner {
     return this.proc !== null;
   }
 
-  // Returns true when turn is complete (caller should set turnCompleted flag).
+  // Returns true when the turn is complete.
   private handleLine(line: string, callbacks: RunCallbacks): boolean {
-    let event: CodexEvent;
+    let event: GeminiEvent;
     try {
-      event = JSON.parse(line) as CodexEvent;
+      event = JSON.parse(line) as GeminiEvent;
     } catch {
       return false;
     }
 
     switch (event.type) {
-      case "thread.started": {
-        const tid = (event as { thread_id?: string }).thread_id;
-        if (tid) callbacks.onSessionId(tid);
+      case "init": {
+        // Use the CLI-generated session_id for plugin-side tracking only (not for --resume).
+        const sid = (event as { session_id?: string }).session_id;
+        if (sid) callbacks.onSessionId(sid);
         break;
       }
-      case "item.completed": {
-        const item = (event as { item?: { type?: string; text?: string } }).item;
-        if (item?.type === "agent_message" && typeof item.text === "string") {
-          callbacks.onChunk(item.text);
+      case "message": {
+        const msg = event as { role?: string; content?: string; delta?: boolean };
+        // delta:true = streaming chunk; delta:false = final full copy (skip to avoid duplication)
+        if (msg.role === "assistant" && msg.delta === true && typeof msg.content === "string") {
+          callbacks.onChunk(msg.content);
         }
         break;
       }
-      case "turn.completed":
-        callbacks.onComplete();
-        return true;
+      case "result": {
+        const res = event as { status?: string; error?: { message?: string } };
+        if (res.status === "success") {
+          callbacks.onComplete();
+          return true;
+        } else if (res.status === "error") {
+          callbacks.onError(res.error?.message ?? "Gemini error");
+        }
+        break;
+      }
       case "error": {
-        const err = event as { error?: { message?: string }; message?: string };
-        const msg = err.error?.message ?? err.message ?? "Codex error";
-        callbacks.onError(msg);
+        const err = event as { severity?: string; message?: string };
+        if (err.severity !== "warning") {
+          callbacks.onError(err.message ?? "Gemini error");
+        }
         break;
       }
     }
     return false;
   }
 
-  static async findCodexPath(): Promise<string> {
+  static async findGeminiPath(): Promise<string> {
     const isWin = process.platform === "win32";
-    const lookup = isWin ? "where codex" : "which codex";
+    const lookup = isWin ? "where gemini" : "which gemini";
     try {
       const { stdout } = await execAsync(lookup);
       const lines = stdout.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
@@ -247,6 +263,6 @@ export class CodexRunner implements AgentRunner {
     } catch {
       // fall through
     }
-    return "codex";
+    return "gemini";
   }
 }

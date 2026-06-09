@@ -230,6 +230,34 @@ const STRINGS = {
     "settings.defaultProviderDesc": "Provider to use when opening a new chat panel",
     "error.codexApiKeyOnlyNoToken":
       "API key only mode is ON for Codex, but no OpenAI API key is set. Enter a key in Settings → Codex connection.",
+
+    // Gemini provider
+    "notice.geminiNotFound": (path: string) =>
+      `gemini executable not found (${path}). Install via npm i -g @google/gemini-cli and set its path in Settings → Gemini path.`,
+    "notice.shareGeminiNotSupported":
+      "Share with VS Code is only available for Claude sessions.",
+    "auth.geminiSection": "Gemini (Google) connection",
+    "auth.geminiNote":
+      "Gemini CLI (@google/gemini-cli) must be installed separately. Authenticate via Google account OAuth (run 'gemini' once) or set a GEMINI_API_KEY.",
+    "auth.geminiCliMissing": "Gemini CLI not found",
+    "auth.geminiCliMissingDesc":
+      "Install with: npm install -g @google/gemini-cli",
+    "auth.geminiOAuthHint": "Google account OAuth (run 'gemini' once in terminal to authenticate)",
+    "auth.geminiApiKeySet": "Gemini API key set",
+    "auth.geminiApiKeyMissing": "No Gemini API key (Google OAuth will be used if authenticated)",
+    "auth.geminiApiKey": "Gemini API key",
+    "auth.geminiApiKeyDesc":
+      "Used as GEMINI_API_KEY when running Gemini CLI. Leave empty to use Google account OAuth. Stored in plain text inside vault data.json — keep your vault private.",
+    "auth.geminiApiKeyOnly": "Use API key only (do not use Google OAuth session)",
+    "auth.geminiApiKeyOnlyDesc":
+      "When ON, only the Gemini API key above is used. Disable to allow Gemini CLI's own Google account session.",
+    "settings.geminiPath": "Gemini CLI path",
+    "settings.geminiPathDesc":
+      "Absolute path or 'gemini' if on PATH. e.g. /usr/local/bin/gemini",
+    "settings.defaultModelGemini": "Default Gemini model",
+    "settings.defaultModelGeminiDesc": "Default model for Gemini conversations",
+    "error.geminiApiKeyOnlyNoToken":
+      "API key only mode is ON for Gemini, but no Gemini API key is set. Enter a key in Settings → Gemini connection.",
   },
   ko: {
     // Header
@@ -458,6 +486,34 @@ const STRINGS = {
     "settings.defaultProviderDesc": "채팅 패널을 열 때 사용할 기본 provider",
     "error.codexApiKeyOnlyNoToken":
       "Codex API 키 전용 모드가 켜져 있는데 OpenAI API 키가 설정되어 있지 않습니다. Settings → Codex 연결에서 키를 입력하세요.",
+
+    // Gemini provider
+    "notice.geminiNotFound": (path: string) =>
+      `gemini 실행 파일을 찾을 수 없습니다 (${path}). npm i -g @google/gemini-cli로 설치하고 Settings → Gemini 경로에 지정하세요.`,
+    "notice.shareGeminiNotSupported":
+      "VS Code 공유는 Claude 세션에서만 사용할 수 있습니다.",
+    "auth.geminiSection": "Gemini (Google) 연결",
+    "auth.geminiNote":
+      "Gemini CLI (@google/gemini-cli)를 별도로 설치해야 합니다. Google 계정 OAuth(터미널에서 'gemini' 한 번 실행) 또는 GEMINI_API_KEY로 인증하세요.",
+    "auth.geminiCliMissing": "Gemini CLI를 찾을 수 없음",
+    "auth.geminiCliMissingDesc":
+      "설치 명령: npm install -g @google/gemini-cli",
+    "auth.geminiOAuthHint": "Google 계정 OAuth (터미널에서 'gemini'를 한 번 실행해 인증하세요)",
+    "auth.geminiApiKeySet": "Gemini API 키 설정됨",
+    "auth.geminiApiKeyMissing": "Gemini API 키 미설정 (인증된 경우 Google OAuth 사용)",
+    "auth.geminiApiKey": "Gemini API 키",
+    "auth.geminiApiKeyDesc":
+      "Gemini CLI 실행 시 GEMINI_API_KEY로 전달됩니다. 비워 두면 Google 계정 OAuth를 사용합니다. vault 내 data.json에 평문 저장되므로 vault를 비공개로 유지하세요.",
+    "auth.geminiApiKeyOnly": "API 키만 사용 (Google OAuth 세션 무시)",
+    "auth.geminiApiKeyOnlyDesc":
+      "켜면 Gemini CLI의 Google 계정 세션을 무시하고 위의 Gemini API 키만 사용합니다.",
+    "settings.geminiPath": "Gemini CLI 경로",
+    "settings.geminiPathDesc":
+      "절대 경로 또는 PATH에 있으면 'gemini'만 입력. 예: /usr/local/bin/gemini",
+    "settings.defaultModelGemini": "기본 Gemini 모델",
+    "settings.defaultModelGeminiDesc": "Gemini 대화 시작 시 기본으로 사용할 모델",
+    "error.geminiApiKeyOnlyNoToken":
+      "Gemini API 키 전용 모드가 켜져 있는데 Gemini API 키가 설정되어 있지 않습니다. Settings → Gemini 연결에서 키를 입력하세요.",
   },
 } as const;
 

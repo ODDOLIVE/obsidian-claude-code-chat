@@ -75,9 +75,9 @@ export class ClaudeRunner implements AgentRunner {
       options.model,
     ];
 
-    if (options.sessionFlag === "--continue") {
-      args.push("--continue");
-    } else if (options.sessionFlag === "--resume" && options.sessionId) {
+    // Always use --resume <id> when we have a session ID — avoids picking up
+    // a VS Code session via --continue when both are running against the same cwd.
+    if (options.sessionId && (options.sessionFlag === "--continue" || options.sessionFlag === "--resume")) {
       args.push("--resume", options.sessionId);
     }
 
@@ -115,6 +115,7 @@ export class ClaudeRunner implements AgentRunner {
         cwd: options.vaultPath,
         env,
         shell: useShell,
+        stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (e) {
       callbacks.onError(t("notice.processError", (e as Error).message));

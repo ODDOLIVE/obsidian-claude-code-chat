@@ -4,6 +4,7 @@ import { delimiter, isAbsolute, join } from "path";
 import { promisify } from "util";
 import { ClaudeRunner } from "./ClaudeRunner";
 import { CodexRunner } from "./CodexRunner";
+import { GeminiRunner } from "./GeminiRunner";
 
 const execAsync = promisify(exec);
 
@@ -212,6 +213,41 @@ export class CodexAuthService {
       cliVersion,
       loginDetected,
       loginLabel,
+      apiKeyAvailable: !!apiKey.trim(),
+    };
+  }
+}
+
+export interface GeminiAuthStatus {
+  cliInstalled: boolean;
+  cliVersion: string;
+  apiKeyAvailable: boolean;
+}
+
+export class GeminiAuthService {
+  static async detect(geminiPath: string, apiKey: string): Promise<GeminiAuthStatus> {
+    const foundPath = await GeminiRunner.findGeminiPath();
+    const resolvedPath = (geminiPath && isAbsolute(geminiPath)) ? geminiPath : foundPath;
+
+    const isWin = process.platform === "win32";
+    const extra = isWin ? "" : `${delimiter}/usr/local/bin${delimiter}/opt/homebrew/bin`;
+    const env = { ...process.env, PATH: (process.env.PATH ?? "") + extra, ELECTRON_RUN_AS_NODE: undefined };
+    const useShell = isWin && /\.(cmd|bat)$/i.test(resolvedPath);
+    const quoted = useShell ? `"${resolvedPath}"` : JSON.stringify(resolvedPath);
+
+    let cliInstalled = false;
+    let cliVersion = "";
+    try {
+      const { stdout } = await promisify(exec)(`${quoted} --version`, { timeout: 8000, env });
+      cliVersion = stdout.trim().split(/\r?\n/)[0] ?? "";
+      cliInstalled = true;
+    } catch {
+      cliInstalled = false;
+    }
+
+    return {
+      cliInstalled,
+      cliVersion,
       apiKeyAvailable: !!apiKey.trim(),
     };
   }
