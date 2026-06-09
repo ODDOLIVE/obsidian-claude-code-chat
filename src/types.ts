@@ -6,6 +6,21 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+// 9-B: conversationId-based session record for multi-PC/multi-provider support
+export interface SessionRecord {
+  conversationId: string;    // Plugin-generated UUID, stable across PC/provider changes
+  nativeSessionId?: string;  // Current native session ID from CLI (changes when replaying)
+  lastNativeHost?: string;   // Hostname of the machine that created nativeSessionId
+  provider?: Provider;       // Last active provider
+  startedAt: string;
+  lastMessageAt: string;
+  previewText: string;
+  model: string;
+  customName?: string;
+  lastSavedPath?: string;
+  sharedWithVSCode?: boolean;
+}
+
 export interface ClaudeCodeSettings {
   claudePath: string;
   saveFolder: string;

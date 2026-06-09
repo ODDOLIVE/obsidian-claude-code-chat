@@ -16,11 +16,12 @@ import type { AgentRunner, RunOptions } from "./AgentRunner";
 import { ClaudeRunner } from "./ClaudeRunner";
 import { CodexRunner } from "./CodexRunner";
 import { GeminiRunner } from "./GeminiRunner";
-import { SessionManager, SessionRecord } from "./SessionManager";
+import { SessionManager } from "./SessionManager";
 import { SaveManager } from "./SaveManager";
-import { ChatMessage, MAX_DROP_FILE_SIZE, Provider } from "./types";
+import { ChatMessage, MAX_DROP_FILE_SIZE, Provider, SessionRecord } from "./types";
 import { t } from "./i18n";
 import { AuthService } from "./AuthService";
+import { buildPromptWithHistory } from "./ContextBuilder";
 
 export const VIEW_TYPE_CLAUDE = "claude-code-chat";
 
@@ -557,6 +558,9 @@ export class ClaudeView extends ItemView {
     const isCodex = provider === "codex";
     const isGemini = provider === "gemini";
 
+    // 9-B: Update session manager's provider context for resume mode logic
+    this.sessionManager.setCurrentProvider(provider);
+
     const apiKey = isCodex
       ? (this.plugin.settings.openaiApiKey?.trim() ?? "")
       : isGemini
@@ -581,6 +585,13 @@ export class ClaudeView extends ItemView {
     const model = this.currentModel;
     this.sessionManager.setPreview(prompt, model, provider);
 
+    // 9-B: Capture history BEFORE appending current message (for replay preamble)
+    const conversationHistory = this.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp,
+    }));
+
     // Title sync: on the very first prompt of a new session, prepend a
     // "[Title: <customName>]" line so VS Code's Claude Code history view —
     // which derives its label from the first user message — shows the same
@@ -595,11 +606,13 @@ export class ClaudeView extends ItemView {
       }
     }
 
-    // Capture history BEFORE appending the current user message.
-    // GeminiRunner uses this to inject prior turns into each prompt (no --resume).
-    const geminiHistory = isGemini
-      ? this.messages.map((m) => ({ role: m.role, content: m.content }))
-      : undefined;
+    // 9-B: Determine resume strategy (native --resume vs replay with history preamble)
+    const resumeMode = this.sessionManager.getResumeMode();
+    if (resumeMode.mode === "replay") {
+      // Inject conversation history as preamble for multi-PC / multi-provider continuity
+      const [promptWithHistory] = buildPromptWithHistory(cliPrompt, conversationHistory, provider);
+      cliPrompt = promptWithHistory;
+    }
 
     const attachedNames = this.attachedFiles.map((f) => f.name);
     this.appendMessage("user", prompt, attachedNames);
@@ -631,18 +644,31 @@ export class ClaudeView extends ItemView {
         ? (this.plugin.settings.geminiPath || "gemini")
         : this.plugin.settings.claudePath;
 
+    // 9-B: Build RunOptions based on resume mode
+    let sessionFlag: "--continue" | "--resume" | null = null;
+    let sessionId: string | undefined;
+
+    if (resumeMode.mode === "native") {
+      sessionFlag = "--resume";
+      sessionId = resumeMode.nativeId;
+    } else {
+      // replay or new: don't use native session flags
+      sessionFlag = null;
+      sessionId = undefined;
+    }
+
     const options: RunOptions = {
       prompt: cliPrompt,
       model,
       execPath,
       vaultPath: cwd,
-      sessionFlag: this.sessionManager.getSessionFlag(),
-      sessionId: this.sessionManager.getCurrentSessionId() ?? undefined,
+      sessionFlag,
+      sessionId,
       attachedFilePaths: this.getAttachedFilePaths(),
       apiKey,
       useApiKey,
       provider,
-      history: geminiHistory,
+      history: isGemini ? conversationHistory : undefined, // Gemini still uses history injection
       // Permissions (9-A)
       permissionMode: this.plugin.settings.permissionMode,
       allowedTools: parseToolList(this.plugin.settings.allowedTools),
@@ -1389,7 +1415,7 @@ class SessionListModal extends Modal {
       ).toLocaleString()}`,
     });
     content.onclick = () => {
-      this.onSelect(session.sessionId);
+      this.onSelect(session.conversationId);
       this.close();
     };
 
@@ -1423,9 +1449,9 @@ class SessionListModal extends Modal {
           window.clearTimeout(revertTimer);
           revertTimer = null;
         }
-        if (this.onDelete) await this.onDelete(session.sessionId);
+        if (this.onDelete) await this.onDelete(session.conversationId);
         this.sessions = this.sessions.filter(
-          (s) => s.sessionId !== session.sessionId
+          (s) => s.conversationId !== session.conversationId
         );
         item.remove();
         if (this.sessions.length === 0) {
